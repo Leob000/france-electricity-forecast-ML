@@ -6,11 +6,9 @@ mape <- function(y, ychap) {
   return(round(100 * mean(abs(y - ychap) / abs(y)), digits = 2))
 }
 
-
 rmse.old <- function(residuals, digits = 0) {
   return(round(sqrt(mean((residuals)^2, na.rm = TRUE)), digits = digits))
 }
-
 
 absolute_loss <- function(y, yhat) {
   mean(abs(y - yhat), na.rm = TRUE)
@@ -19,9 +17,6 @@ absolute_loss <- function(y, yhat) {
 bias <- function(y, yhat) {
   mean(y - yhat, na.rm = TRUE)
 }
-
-
-
 
 pinball_loss <- function(y, yhat_quant, quant, output.vect = FALSE) {
   yhat_quant <- as.matrix(yhat_quant)
@@ -42,11 +37,6 @@ pinball_loss <- function(y, yhat_quant, quant, output.vect = FALSE) {
   }
   return(pinball_loss)
 }
-
-
-
-
-
 
 pinball_loss2 <- function(res, quant, output.vect = FALSE) {
   loss_q <- mean((res) * (quant - (res < 0)), na.rm = T)
