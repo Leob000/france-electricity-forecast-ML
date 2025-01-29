@@ -1,4 +1,4 @@
-# %%
+```{r}
 rm(list = objects())
 library(tidyverse)
 library(lubridate)
@@ -8,28 +8,29 @@ X_train <- read_csv("Data/train.csv")
 X_test <- read_csv("Data/test.csv")
 X_train_orig <- X_train
 X_test_orig <- X_test
-# %%
+```
 
-table(X_train$Net_demand < X_train$Load)
-# La demande nettre est bien inférieur au gross load, comme attentdu
-
+```{r}
 summary(X_train)
 
 range(X_train$Date)
 range(X_test$Date)
 
-# Attention, les weekdays sont en num et pas en ~classification
-names(X_train)
-head(X_train[, c("Date", "WeekDays")])
 str(X_train)
+```
+
+On transforme WeekDays en facteurs
+```{r}
+# Attention, les weekdays sont en num et pas en ~classification
+head(X_train[, c("Date", "WeekDays")])
 weekdays(head(X_train$Date, 7))
 class(X_train$WeekDays)
-
-# 5: Saturday
-# 6: Sunday
-# 0: Monday
-# ...
-
+# Convert WeekDays from numeric to factor with appropriate labels
+X_train$WeekDays <- factor(X_train$WeekDays, levels = 0:6, labels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+head(X_train[, c("Date", "WeekDays")])
+tail(X_train[, c("Date", "WeekDays")])
+```
+```{r}
 ################################### analyse de la demande nette
 
 ############################################ trend
@@ -62,8 +63,9 @@ plot(X_train$Date, X_train$Net_demand, type = "l", xlim = range(X_train$Date, X_
 K <- 7
 smooth <- stats::filter(X_train$Net_demand, rep(1 / K, K))
 lines(X_train$Date, smooth, col = "red", lwd = 2)
+```
 
-
+```{r}
 ############################################ yearly cycle
 sel <- which(X_train$Year == 2021)
 plot(X_train$Date[sel], X_train$Net_demand[sel], type = "l")
@@ -213,11 +215,9 @@ plot(X_train$Date, smooth_wind, type = "l", col = "red", axes = F, xlab = "", yl
 axis(side = 4, col = "red", col.axis = "red")
 mtext(side = 4, line = 3, "Wind", col = "red")
 legend("top", c("Wind power", "Wind"), col = c("black", "red"), lty = 1, ncol = 1, bty = "n")
+```
 
-
-
-
-
+```{r}
 ############################################ Solar
 # Attention, variable à corriger car la nébulosité n'a pas été bien calculée auparavant
 par(mfrow = c(1, 1))
@@ -303,3 +303,4 @@ par(mfrow = c(1, 1))
 hist(X_train$Nebulosity[sel], xlim = range(X_train$Nebulosity, X_test$Nebulosity), col = "lightblue", breaks = 50)
 par(new = T)
 hist(X_test$Nebulosity, xlim = range(X_train$Nebulosity, X_test$Nebulosity), col = adjustcolor("red", alpha.f = 0.5), , breaks = 50)
+```
