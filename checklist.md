@@ -2,41 +2,17 @@
 
 ## Frame the problem and look at the big picture  
 1. Define the objective in business terms.  
-- Predict Load or Net_demand ? Difference between the two?
+- Predict Load or Net_demand ?
+- Load : Conso d'électrécité
+- Net demand : Conso d'électrécité - Production locale (panneaux solaires, ...) -> plus faible que Load
 - Train sur les données de "2013-03-02" à "2022-09-01", test de "2022-09-02" à "2023-10-01", donc période spéciale de sobriété
-- Intérêt fort de prévoir la demande durant cette période à cause des prix très élevés
+    - Intérêt fort de prévoir la demande durant cette période à cause des prix très élevés
+    - Période de sobriété énergique à cause de différents facteurs (guerre en Ukraine, réparations centrales nucléaires)
+    - Plan de sobriété national présenté le 6 octobre 2022 et effectif à partir de juin 2022, voir [lien du gouvernement ](https://www.ecologie.gouv.fr/actualites/sobriete-energetique-plan-reduire-notre-consommation-denergie).
+    - Objectif du gouvernement de réduction de 10% de la consommation d'énergie sur 2 ans (à partir du plan) par rapport à 2019
 
----
-### Key Features of the Sobriety Period:
-The "Sobriety Period" (Période de Sobriété) for the electricity market in France was a government initiative aiming to reduce energy consumption and manage resources effectively during the energy crisis exacerbated by the Russian-Ukrainian conflict. The period you refer to, from **September 2, 2022, to October 1, 2023**, was marked by heightened measures to encourage energy-saving behaviors among citizens, businesses, and public institutions.
-1. **Energy Reduction Goals**:
-   - The government aimed for a **10% reduction in energy consumption** over two years compared to 2019 levels.
-   - Specific focus was placed on reducing electricity and gas use during peak demand periods.
-
-2. **National Sobriety Plan (Plan de Sobriété)**:
-   - Launched on **October 6, 2022**, the plan introduced guidelines and sector-specific actions to save energy.
-   - Public awareness campaigns encouraged responsible consumption.
-
-3. **Voluntary and Mandatory Measures**:
-   - **Voluntary measures**: Lowering heating in buildings to a maximum of 19°C, turning off unnecessary lighting, and optimizing energy use in industries.
-   - **Mandatory measures**: Regulations for public sector energy use, such as reduced lighting hours in public spaces and reduced heating in government offices.
-
-4. **Industry and Business Contributions**:
-   - Businesses were encouraged to implement energy management systems and reduce reliance on energy-intensive processes.
-   - Large energy consumers were monitored to comply with consumption reduction strategies.
-
-5. **Citizen Engagement**:
-   - Campaigns like "Every Gesture Counts" promoted individual actions such as unplugging appliances, using energy-efficient equipment, and carpooling.
-
-6. **Impact on Electricity Prices**:
-   - Measures were also intended to stabilize electricity prices in the wholesale market by reducing peak demand, thus mitigating the economic impact of the energy crisis.
-
-7. **Monitoring and Reporting**:
-   - The government and energy suppliers monitored progress toward the reduction targets, with regular updates on achievements and challenges.
----
-
-2. How will your solution be used?  
-3. What are the current solutions/workarounds (if any)?  
+<!-- 2. How will your solution be used?   -->
+<!-- 3. What are the current solutions/workarounds (if any)?   -->
 4. How should you frame this problem (supervised/unsupervised, online/offline, etc.)  
 - Supervised, offline
 5. How should performance be measured?  
@@ -44,15 +20,15 @@ The "Sobriety Period" (Période de Sobriété) for the electricity market in Fra
 - Grosse erreur si on sous-estime la pred, plus petite si on sur-estime
 6. Is the performance measure aligned with the business objective?  
 - Oui, car gros problème si on ne parvient pas à répondre à la demande (amendes, blackout, prix d'achat très élevé à l'étranger car tout le monde dans la galère?), moins gros si on a juste de l'électricité en trop (juste moins bonne optimisation ?)
-7. What would be the minimum performance needed to reach the business objective?  
-8. What are comparable problems? Can you reuse experience or tools?  
-9. Is human expertise available?  
+<!-- 7. What would be the minimum performance needed to reach the business objective?   -->
+<!-- 8. What are comparable problems? Can you reuse experience or tools?   -->
+<!-- 9. Is human expertise available?   -->
 10. How would you solve the problem manually?  
 - Moyennes des conso des moments des années précédentes + réserve pour réduire le risque de ne pas pouvoir répondre à la demande
-11. List the assumptions you or others have made so far.  
-12. Verify assumptions if possible.  
+<!-- 11. List the assumptions you or others have made so far.   -->
+<!-- 12. Verify assumptions if possible.   -->
 
-## Get the data   
+<!-- ## Get the data   
 Note: automate as much as possible so you can easily get fresh data.  
 
 1. List the data you need and how much you need.  
@@ -65,7 +41,7 @@ Note: automate as much as possible so you can easily get fresh data.
 8. Convert the data to a format you can easily manipulate (without changing the data itself).  
 9. Ensure sensitive information is deleted or protected (e.g., anonymized). 
 10. Check the size and type of data (time series, sample, geographical, etc.).  
-11. Sample a test set, put it aside, and never look at it (no data snooping!).    
+11. Sample a test set, put it aside, and never look at it (no data snooping!).     -->
 
 ## Explore the data  
 Note: try to get insights from a field expert for these steps.  
@@ -79,6 +55,16 @@ Note: try to get insights from a field expert for these steps.
     - Noisiness and type of noise (stochastic, outliers, rounding errors, etc.)
     - Possibly useful for the task?  
     - Type of distribution (Gaussian, uniform, logarithmic, etc.)
+Load.1 le load décalé d'un jour
+Temp_s95 température avec lissage exponentiel
+Temp_S95_min minimum de la température lissée sur la journée
+Nébulosité, a quel point le ciel est opaque (100 = très nuageux)
+Nebulosity_weighted prend en compte les panneaux solaires
+toy = time of year
+weekdays = jour de la semaine (à modifier)
+BH bank holidays = jour férié ; before/after si before/after l'est aussi
+DLS Day light savings, changement d'heure
+summer break Mois d'août
 4. For supervised learning tasks, identify the target attribute(s).
 5. Visualize the data.  
 6. Study the correlations between attributes.  
