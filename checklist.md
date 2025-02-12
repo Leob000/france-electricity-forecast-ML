@@ -69,6 +69,7 @@ summer break Mois d'août
 
 Température ressentie dépend de wind et temp
 Tester faire des modèles séparés pour la production et la conso?
+Faire ensemble de modèle avec 1 modèle qui sous-estime et 1 qui sur-estime
 4. For supervised learning tasks, identify the target attribute(s).
 5. Visualize the data.  
 6. Study the correlations between attributes.  

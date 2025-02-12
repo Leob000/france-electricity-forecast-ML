@@ -1,5 +1,4 @@
 rm(list = objects())
-tidy_source(source = "R/gam_advanced.R", file = "R/gam_advanced.R", width.cutoff = 50, wrap = TRUE)
 ############### packages
 library(mgcv)
 library(yarrr)
@@ -8,7 +7,6 @@ library(forecast)
 library(tidyverse)
 library(formatR)
 source("R/score.R")
-
 
 
 Data0 <- read_delim("Data/train.csv", delim = ",")
@@ -110,8 +108,7 @@ gam7_ti$gcv.ubre %>%
     sqrt()
 rmse(Data0[sel_b, ]$Load, gam7_ti.forecast)
 
-############################################################################## Anova
-############################################################################## selection
+#### Anova selection
 
 equation <- Load ~ s(as.numeric(Date), k = 3, bs = "cr") + s(toy, k = 30, bs = "cc") +
     s(Temp, k = 10, bs = "cr") + s(Load.1, bs = "cr") + s(Load.7, bs = "cr") + s(Temp_s99,
@@ -165,11 +162,7 @@ fit2 <- gam(equation2, data = Data0)
 
 anova(fit1, fit2, test = "Chisq") #### p value <0.05 interaction is significant
 
-
-
-######################################################################################## shrinkage
-######################################################################################## approach
-
+#### Shrinkage approach
 # On test avec une variable random voir si le modèle la trouve significative,
 # ce qui serait un problème
 Data0$Var1 <- rnorm(nrow(Data0), mean = 0, sd = sd(Data0$Load))
@@ -208,8 +201,6 @@ gam8_cs$gcv.ubre %>%
 rmse(Data0[sel_b, ]$Load, gam8_cs.forecast)
 
 
-
-
 ## toy test à faire en retirant cc de l'effet toy
 terms <- predict(gam8, newdata = Data0, type = "terms")
 terms_cs <- predict(gam8_cs, newdata = Data0, type = "terms")
@@ -246,11 +237,7 @@ plot(Data0$Var1[o], terms[o, sel.column], type = "l", ylim = range(
 lines(Data0$Var1[o], terms_cs[o, sel.column], col = "red")
 
 
-
-######################################################################################################## double
-######################################################################################################## penalty
-######################################################################################################## shrinkage
-
+#### Double penalty shrinkage
 equation <- Load ~ s(as.numeric(Date), k = 3, bs = "cr") + s(toy, k = 30, bs = "cc") +
     s(Temp, k = 10, bs = "cr") + s(Load.1, bs = "cr", by = as.factor(WeekDays)) +
     s(Load.7, bs = "cr") + s(Temp_s99, k = 10, bs = "cr") + as.factor(WeekDays) +
@@ -280,12 +267,7 @@ lines(Data0$Var1[o], terms_cs[o, sel.column], col = "red")
 lines(Data0$Var1[o], terms_select[o, sel.column], col = "blue")
 
 
-
-
-
-
-################################################################## online
-################################################################## learning
+#### Online learning
 
 equation <- Load ~ s(as.numeric(Date), k = 3, bs = "cr") + s(toy, k = 30, bs = "cc") +
     s(Temp, k = 10, bs = "cr") + s(Load.1, bs = "cr", by = as.factor(WeekDays)) +
@@ -386,8 +368,7 @@ lines(Data0$Date[sel_b], cumsum(Data0$Load[sel_b] - gam9.kalman.Dyn.em), col = "
 lines(Data0$Date[sel_b], cumsum(Data0$Load[sel_b] - gam9.kalman.Dyn2), col = "orange")
 
 
-
-######################################################################################## qgam
+#### Qgam
 library(qgam)
 equation <- Load ~ s(as.numeric(Date), k = 3, bs = "cr") + s(toy, k = 30, bs = "cc") +
     s(Temp, k = 10, bs = "cr") + s(Load.1, bs = "cr", by = as.factor(WeekDays)) +
