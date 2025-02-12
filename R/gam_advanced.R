@@ -1,5 +1,5 @@
 rm(list = objects())
-tidy_source(source = "R/gam_advanced.R", file = "R/gam_advanced.R", width.cutoff = 50)
+tidy_source(source = "R/gam_advanced.R", file = "R/gam_advanced.R", width.cutoff = 50, wrap = TRUE)
 ############### packages
 library(mgcv)
 library(yarrr)
