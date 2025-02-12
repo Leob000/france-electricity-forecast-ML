@@ -68,6 +68,7 @@ DLS Day light savings, changement d'heure
 summer break Mois d'août
 
 Température ressentie dépend de wind et temp
+Tester faire des modèles séparés pour la production et la conso?
 4. For supervised learning tasks, identify the target attribute(s).
 5. Visualize the data.  
 6. Study the correlations between attributes.  
