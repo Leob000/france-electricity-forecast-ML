@@ -193,7 +193,9 @@ gam5.forecast <- predict(gam5, newdata = Data0[sel_b, ])
 rmse5.forecast <- rmse.old(Data0[sel_b, ]$Load - gam5.forecast)
 
 ##### model 6
-equation <- Load~s(as.numeric(Date), k = 3, bs = "cr") + s(toy, k = 30, bs = "cc") + s(Temp, k = 10, bs = "cr") + s(Load.1, bs = "cr") + s(Load.7, bs = "cr") +
+equation <- Load~s(as.numeric(Date), k = 3, bs = "cr") +
+  s(toy, k = 30, bs = "cc") + s(Temp, k = 10, bs = "cr") +
+  s(Load.1, bs = "cr") + s(Load.7, bs = "cr") +
   s(Temp_s99, k = 10, bs = "cr") + as.factor(WeekDays) + BH
 Block_residuals <- lapply(block_list, blockRMSE, equation = equation) %>% unlist()
 rmse6 <- rmse.old(Block_residuals)
@@ -226,9 +228,10 @@ plot(gam6, select = 4, scale = 0, residuals = T, shade = TRUE, shade.col = "seag
 plot(gam6, select = 5, scale = 0, residuals = T, shade = TRUE, shade.col = "thistle3", col = "violetred1", lwd = 2, rug = F, pch = 20, cex = 0.01)
 
 
-####################################################################################################
+#######################################################################################
 ######################### residual correction
-####################################################################################################
+#######################################################################################
+# On regagne en faisant un ARIMA à la fin, si le modèle consiste en prévoir d'un jour pour le lendemain (moins sinon)
 Block_residuals.ts <- ts(Block_residuals, frequency = 7)
 
 fit.arima.res <- auto.arima(Block_residuals.ts, max.p = 3, max.q = 4, max.P = 2, max.Q = 2, trace = T, ic = "aic", method = "CSS")
@@ -268,7 +271,10 @@ lines(rmse.old.forecast, type = "b", pch = 20, col = "blue")
 lines(rgcv, col = "red", type = "b", pch = 20)
 points(7, rmse6.arima.forecast)
 points(7, rmse6.arima)
-legend("topright", col = c("red", "black", "blue"), c("gcv", "blockCV", "test"), pch = 20, ncol = 1, bty = "n", lty = 1)
+legend("topright",
+  col = c("red", "black", "blue"),
+  c("gcv", "blockCV", "test"), pch = 20, ncol = 1, bty = "n", lty = 1
+)
 
 
 
@@ -280,12 +286,12 @@ legend("topright", col = c("red", "black", "blue"), c("gcv", "blockCV", "test"),
 equation <- Net_demand ~ s(as.numeric(Date), k = 3, bs = "cr") + s(toy, k = 30, bs = "cc") + s(Temp, k = 10, bs = "cr") + s(Temp_s99, k = 10, bs = "cr") + WeekDays + BH
 gam_net0 <- gam(equation, data = Data0[sel_a, ])
 summary(gam_net0)
-sqrt(gam_net1$gcv.ubre)
-gam_net1.forecast <- predict(gam_net1, newdata = Data0[sel_b, ])
-rmse_net1.forecast <- rmse(Data0[sel_b, ]$Net_demand, gam_net1.forecast)
-res <- Data0$Net_demand[sel_b] - gam_net1.forecast
+sqrt(gam_net0$gcv.ubre)
+gam_net0.forecast <- predict(gam_net0, newdata = Data0[sel_b, ])
+rmse_net0.forecast <- rmse(Data0[sel_b, ]$Net_demand, gam_net0.forecast)
+res <- Data0$Net_demand[sel_b] - gam_net0.forecast
 quant <- qnorm(0.95, mean = mean(res), sd = sd(res))
-pinball_loss(y = Data0$Net_demand[sel_b], gam_net1.forecast + quant, quant = 0.95, output.vect = FALSE)
+pinball_loss(y = Data0$Net_demand[sel_b], gam_net0.forecast + quant, quant = 0.95, output.vect = FALSE)
 
 
 #####

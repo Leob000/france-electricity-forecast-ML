@@ -66,6 +66,8 @@ weekdays = jour de la semaine (à modifier)
 BH bank holidays = jour férié ; before/after si before/after l'est aussi
 DLS Day light savings, changement d'heure
 summer break Mois d'août
+
+Température ressentie dépend de wind et temp
 4. For supervised learning tasks, identify the target attribute(s).
 5. Visualize the data.  
 6. Study the correlations between attributes.  
@@ -98,6 +100,7 @@ Notes:
 
 ## Short-list promising models  
 Check Kaggle timeseries course + Kaggle winning models
+Generalized Random Forest
 Notes: 
 - If the data is huge, you may want to sample smaller training sets so you can train many different models in a reasonable time (be aware that this penalizes complex models such as large neural nets or Random Forests).  
 - Once again, try to automate these steps as much as possible.    
