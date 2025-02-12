@@ -18,6 +18,7 @@
 5. How should performance be measured?  
 - Pinball loss quantile 0.8
 - Grosse erreur si on sous-estime la pred, plus petite si on sur-estime
+- Donc revient à estimer le quantile 0.8
 6. Is the performance measure aligned with the business objective?  
 - Oui, car gros problème si on ne parvient pas à répondre à la demande (amendes, blackout, prix d'achat très élevé à l'étranger car tout le monde dans la galère?), moins gros si on a juste de l'électricité en trop (juste moins bonne optimisation ?)
 <!-- 7. What would be the minimum performance needed to reach the business objective?   -->
@@ -96,6 +97,7 @@ Notes:
 4. Feature scaling: standardize or normalize features.  
 
 ## Short-list promising models  
+Check Kaggle timeseries course + Kaggle winning models
 Notes: 
 - If the data is huge, you may want to sample smaller training sets so you can train many different models in a reasonable time (be aware that this penalizes complex models such as large neural nets or Random Forests).  
 - Once again, try to automate these steps as much as possible.    

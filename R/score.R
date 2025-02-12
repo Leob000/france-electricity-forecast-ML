@@ -1,3 +1,4 @@
+# RMSE homogène aux watts? donc utile pour élec
 rmse <- function(y, ychap, digits = 0) {
   return(round(sqrt(mean((y - ychap)^2, na.rm = TRUE)), digits = digits))
 }
