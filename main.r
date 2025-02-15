@@ -27,3 +27,5 @@ for (i in seq(0.95, 1.2, by = 0.001)) {
 }
 plot(axe_x, axe_y)
 print(best)
+
+# TODO Check fb Prophet model
