@@ -1,4 +1,4 @@
-- Analyse descriptive sur 
+- Analyse descriptive sur Rmarkdown
 - Implémanter la crossval
 - Prédictions train et test des algos suivants pour méthode d'ensemble :
     - Random forest, XGBoost
