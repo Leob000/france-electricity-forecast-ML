@@ -19,11 +19,9 @@ seuil_haut <- 96
 for (year in years) {
   idx <- which(df_train_val$Year == year)
   col <- df_train_val$Nebulosity[idx]
-  df_train_val$Nebulosity_stab[idx] <- seuil_bas + (col - min(col)) / (max(col) - min(col)) * (seuil_haut - seuil_bas)
+  df_train_val$Nebulosity[idx] <- seuil_bas + (col - min(col)) / (max(col) - min(col)) * (seuil_haut - seuil_bas)
 }
-idx <- which(df_train_val$Year >= 2018)
-df_train_val$Nebulosity_stab[idx] <- df_train_val$Nebulosity[idx]
-plot(df_train_val$Date, df_train_val$Nebulosity_stab)
+plot(df_train_val$Date, df_train_val$Nebulosity)
 
 # Idem pour Nebulosity_weighted
 plot(df_train_val$Nebulosity_weighted)
@@ -32,11 +30,15 @@ seuil_haut <- 96
 for (year in years) {
   idx <- which(df_train_val$Year == year)
   col <- df_train_val$Nebulosity_weighted[idx]
-  df_train_val$Nebulosity_weighted_stab[idx] <- seuil_bas + (col - min(col)) / (max(col) - min(col)) * (seuil_haut - seuil_bas)
+  df_train_val$Nebulosity_weighted[idx] <- seuil_bas + (col - min(col)) / (max(col) - min(col)) * (seuil_haut - seuil_bas)
 }
-idx <- which(df_train_val$Year >= 2018)
-df_train_val$Nebulosity_weighted_stab[idx] <- df_train_val$Nebulosity_weighted[idx]
-plot(df_train_val$Date, df_train_val$Nebulosity_weighted_stab)
+plot(df_train_val$Date, df_train_val$Nebulosity_weighted)
+
+# Matrice de corrélation des variables
+# TODO Clarifier la matrice?
+library(corrplot)
+correlation_matrix <- cor(df_train_val %>% select(-Date, -Year, -Month, -Holiday, -Holiday_zone_a, -Holiday_zone_b, -Holiday_zone_c, -toy, -BH_before, -BH, -BH_after, -WeekDays, -DLS, -Summer_break, -Christmas_break, -BH_Holiday) %>% na.omit())
+corrplot(correlation_matrix, method = "color", type = "upper", tl.col = "black", tl.srt = 45)
 
 # Création du set de validation, on prend l'année 2021
 range(df_train_val$Date)
