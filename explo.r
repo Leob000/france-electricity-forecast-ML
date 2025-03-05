@@ -92,7 +92,16 @@ df_full$lundi_vendredi <- as.numeric((df_full$WeekDays == 0) | (df_full$WeekDays
 # 15 degrés celcius = 288.15 K
 df_full$flag_temp <- as.numeric(df_full$Temp <= 288.15)
 
+
+# Transformation minmax de l'année
+df_full$Year <- (df_full$Year - min(df_full$Year)) / (max(df_full$Year) - min(df_full$Year))
+
+# Création juste des données train
+idx_train <- which(df_full$Date <= "2022-09-01")
+df_train <- df_full[idx_train, ]
+
 # Normalisation des variables classiques
+# On normalisera toujours en prenant la moyenne/écart type à partir des données train, puis en les appliquant sur le jeu de donné global
 features_to_normalize <- c(
   "Temp",
   "Temp_s95",
@@ -108,7 +117,9 @@ features_to_normalize <- c(
   "Net_demand.1_trend"
 )
 for (feature in features_to_normalize) {
-  df_full[[feature]] <- (df_full[[feature]] - mean(df_full[[feature]])) / sd(df_full[[feature]])
+  f_mean <- mean(df_train[[feature]])
+  f_sd <- sd(df_train[[feature]])
+  df_full[[feature]] <- (df_full[[feature]] - f_mean) / f_sd
 }
 
 # Normalisation des variables qui ont un lag, on normalisera les différentes Net_demand plus tard pour garder en mémoire la moyenne et l'écart type, pour déstandardiser les prédictions
@@ -120,14 +131,11 @@ features_to_normalize_multiple <- list(
 for (feature_pair in features_to_normalize_multiple) {
   first_feature <- feature_pair[1]
   second_feature <- feature_pair[2]
-  f_mean <- mean(df_full[[first_feature]])
-  f_sd <- sd(df_full[[first_feature]])
+  f_mean <- mean(df_train[[first_feature]])
+  f_sd <- sd(df_train[[first_feature]])
   df_full[[first_feature]] <- (df_full[[first_feature]] - f_mean) / f_sd
   df_full[[second_feature]] <- (df_full[[second_feature]] - f_mean) / f_sd
 }
 
-# Transformation minmax de l'année
-df_full$Year <- (df_full$Year - min(df_full$Year)) / (max(df_full$Year) - min(df_full$Year))
-
-# Save the transformed dataframe to a CSV file
+# On sauvegarde les résultats en csv pour les réutiliser ailleurs
 write_csv(df_full, "Data/treated_data.csv")
