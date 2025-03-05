@@ -1,5 +1,4 @@
 - Analyse descriptive sur Rmarkdown
-    - Corriger la nébulosité, stabiliser en variance?
     - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
 - Feature engineering:
     - Trend Net_demand.1 7 derniers jours?
