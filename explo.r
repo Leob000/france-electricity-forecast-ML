@@ -4,7 +4,6 @@ source("R/score.R")
 library(tidyverse)
 
 set.seed(42)
-GRAPH <- TRUE
 
 df_train_val <- read_csv("Data/train.csv")
 df_test <- read_csv("Data/test.csv")
@@ -84,8 +83,50 @@ df_full$angle_week <- 2 * pi * (df_full$dayofweek - 1) / 7
 df_full$x_dayofweek <- cos(df_full$angle_week)
 df_full$y_dayofweek <- sin(df_full$angle_week)
 df_full <- df_full %>% select(-dayofweek, -angle_week)
+# Drop des anciennes variables de date
+df_full <- df_full %>% select(-toy, -Month)
 # Variable catégorielle pour lundi ou vendredi
 df_full$lundi_vendredi <- as.numeric((df_full$WeekDays == 0) | (df_full$WeekDays == 4))
+# Variable catégorielle pour température inférieure à 15 degrés
+# 15 degrés celcius = 288.15 K
+df_full$flag_temp <- as.numeric(df_full$Temp <= 288.15)
+
+# Normalisation des variables classiques
+features_to_normalize <- c(
+  "Temp",
+  "Temp_s95",
+  "Temp_s99",
+  "Temp_s95_min",
+  "Temp_s95_max",
+  "Temp_s99_min",
+  "Temp_s99_max",
+  "Wind",
+  "Wind_weighted_ratio",
+  "Nebulosity",
+  "Nebulosity_weighted_ratio",
+  "Net_demand.1_trend"
+)
+for (feature in features_to_normalize) {
+  df_full[[feature]] <- (df_full[[feature]] - mean(df_full[[feature]])) / sd(df_full[[feature]])
+}
+
+# Normalisation des variables qui ont un lag, on normalisera les différentes Net_demand plus tard pour garder en mémoire la moyenne et l'écart type, pour déstandardiser les prédictions
+features_to_normalize_multiple <- list(
+  c("Load.1", "Load.7"),
+  c("Solar_power.1", "Solar_power.7"),
+  c("Wind_power.1", "Wind_power.7")
+)
+for (feature_pair in features_to_normalize_multiple) {
+  first_feature <- feature_pair[1]
+  second_feature <- feature_pair[2]
+  f_mean <- mean(df_full[[first_feature]])
+  f_sd <- sd(df_full[[first_feature]])
+  df_full[[first_feature]] <- (df_full[[first_feature]] - f_mean) / f_sd
+  df_full[[second_feature]] <- (df_full[[second_feature]] - f_mean) / f_sd
+}
+
+# Transformation minmax de l'année
+df_full$Year <- (df_full$Year - min(df_full$Year)) / (max(df_full$Year) - min(df_full$Year))
 
 # Séparation des trois jeux de données: train, val, test
 range(df_train_val$Date)
@@ -98,3 +139,5 @@ df_test <- df_full[idx_test, ]
 range(df_train$Date)
 range(df_val$Date)
 range(df_test$Date)
+
+# NPO Normalisation Net_demand et lags
