@@ -129,16 +129,5 @@ for (feature_pair in features_to_normalize_multiple) {
 # Transformation minmax de l'année
 df_full$Year <- (df_full$Year - min(df_full$Year)) / (max(df_full$Year) - min(df_full$Year))
 
-# Séparation des trois jeux de données: train, val, test
-range(df_train_val$Date)
-idx_train <- which(df_full$Date <= "2021-09-01")
-idx_val <- which((df_full$Date > "2021-09-01") & (df_full$Date <= "2022-09-01"))
-idx_test <- which(df_full$Date > "2022-09-01")
-df_train <- df_full[idx_train, ]
-df_val <- df_full[idx_val, ]
-df_test <- df_full[idx_test, ]
-range(df_train$Date)
-range(df_val$Date)
-range(df_test$Date)
-
-# NPO Normalisation Net_demand et lags
+# Save the transformed dataframe to a CSV file
+write_csv(df_full, "Data/treated_data.csv")
