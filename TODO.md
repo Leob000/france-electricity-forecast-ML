@@ -2,7 +2,6 @@
     - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
     - Eliminer les mauvaises features du jeu de donnée train (Load, etc)
 - Feature engineering:
-    - Trend Net_demand.1 7 derniers jours?    (ajouter -2 -8 -6 (les plus corrélés))
     - Représentation de la date, trigonométrique? catégoriel? année en int normalisé? (jours de la semaine/mois)
     - ajouter variable été hiver one hot encoding 
     
