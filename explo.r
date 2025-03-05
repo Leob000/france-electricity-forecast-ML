@@ -68,9 +68,10 @@ plot(df_full$Date, df_full$Net_demand)
 lines(df_full$Date, df_full$Net_demand.1_trend, col = "red")
 
 # Feature engineering sur les dates
-# Weekdays en facteur
+# Weekdays en facteur, idem pour BH_Holiday
 df_full$WeekDays <- as.factor(df_full$WeekDays) # 0 = Lundi, 6 = Dimanche
 boxplot(Net_demand ~ WeekDays, data = df_full)
+df_full$BH_Holiday <- as.factor(df_full$BH_Holiday)
 # dayofyear trigonométrique
 df_full$dayofyear <- yday(df_full$Date)
 df_full$angle <- 2 * pi * (df_full$dayofyear - 1) / 366
