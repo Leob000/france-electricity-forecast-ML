@@ -1,5 +1,11 @@
 - Analyse descriptive sur Rmarkdown
-- Implémanter la crossval
+    - Corriger la nébulosité, stabiliser en variance?
+    - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
+- Feature engineering:
+    - Trend Net_demand.1 7 derniers jours?
+    - Représentation de la date, trigonométrique? catégoriel? année en int normalisé?
+
+- Implémenter la crossval, ou validation sur les 365 derniers jours
 - Prédictions train et test des algos suivants pour méthode d'ensemble :
     - Random forest, XGBoost
     - GAM
