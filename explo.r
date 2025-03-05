@@ -68,6 +68,11 @@ for (i in 1:6) {
 plot(df_full$Date, df_full$Net_demand)
 lines(df_full$Date, df_full$Net_demand.1_trend, col = "red")
 
+# Feature engineering sur les dates
+# Weekdays en facteur
+df_full$WeekDays <- as.factor(df_full$WeekDays) # 0 = Lundi, 6 = Dimanche
+boxplot(Net_demand ~ WeekDays, data = df_full)
+
 # Séparation des trois jeux de données: train, val, test
 range(df_train_val$Date)
 idx_train <- which(df_full$Date <= "2021-09-01")
