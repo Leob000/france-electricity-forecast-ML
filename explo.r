@@ -48,7 +48,17 @@ library(corrplot)
 correlation_matrix <- cor(df_train_val %>% select(-Date, -Year, -Month, -Holiday, -Holiday_zone_a, -Holiday_zone_b, -Holiday_zone_c, -toy, -BH_before, -BH, -BH_after, -WeekDays, -DLS, -Summer_break, -Christmas_break, -BH_Holiday) %>% na.omit())
 corrplot(correlation_matrix, method = "color", type = "upper", tl.col = "black", tl.srt = 45)
 
+# Ajout de la feature "Net_demand.1_trend" qui prend la moyenne des 7 dernières valeurs
+df_train_val <- df_train_val %>%
+  arrange(Date) %>%
+  mutate(Net_demand.1_trend = zoo::rollapply(Net_demand.1, width = 7, FUN = mean, align = "right", fill = NA))
 
+# On rempli les NaN du début
+for (i in 1:6) {
+  df_train_val$Net_demand.1_trend[i] <- df_train_val$Net_demand.1_trend[7]
+}
+plot(df_train_val$Date, df_train_val$Net_demand)
+lines(df_train_val$Date, df_train_val$Net_demand.1_trend, col = "red")
 
 # Création du set de validation, on prend la dernière année dans les données d'entraînement
 range(df_train_val$Date)
