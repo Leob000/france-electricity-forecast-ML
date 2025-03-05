@@ -1,5 +1,6 @@
 - Analyse descriptive sur Rmarkdown
     - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
+    - Eliminer les mauvaises features du jeu de donnée train (Load, etc)
 - Feature engineering:
     - Trend Net_demand.1 7 derniers jours?
     - Représentation de la date, trigonométrique? catégoriel? année en int normalisé?
