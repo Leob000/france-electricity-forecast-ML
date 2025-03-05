@@ -1,0 +1,6 @@
+- Analyse descriptive sur 
+- Implémanter la crossval
+- Prédictions train et test des algos suivants pour méthode d'ensemble :
+    - Random forest, XGBoost
+    - GAM
+    - ARIMA
