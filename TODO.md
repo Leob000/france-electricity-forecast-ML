@@ -1,9 +1,5 @@
 - Analyse descriptive sur Rmarkdown
     - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
-    - Eliminer les mauvaises features du jeu de donnée train (Load, etc)
-- Feature engineering:
-    - Représentation de la date, trigonométrique? catégoriel? année en int normalisé? (jours de la semaine/mois)
-    - ajouter variable été hiver one hot encoding 
     
 - Implémenter la crossval, ou validation sur les 365 derniers jours
 - Prédictions train et test des algos suivants pour méthode d'ensemble :
