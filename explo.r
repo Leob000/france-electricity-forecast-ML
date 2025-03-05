@@ -90,12 +90,15 @@ range(df_test$Date)
 
 # fonction pour transformer en trigo
 transformation_trigo = function (data,nbr_class) {
-  x=cos(2*pi*(data-1))/nbr_class
-  y=sin(2*pi*(data-1))/nbr_class
-  return (x,y)
+  x=cos(2*pi*(data))/nbr_class
+  y=sin(2*pi*(data))/nbr_class
+  return (list(x,y))
 }
 # creation des variables wkd et coeur de la semaine (si les 2 == 0 => lundi vendredi)                  
 Data0$WeekDays2 <- weekdays(Data0$Date)
 Data0$WeekDays <- forcats::fct_recode(Data0$WeekDays2, 'WorkDay'='mardi' ,'WorkDay'='mercredi', 'WorkDay' = 'jeudi')
 Data0$WeekendDays <- forcats::fct_recode(Data0$WeekDays2, 'WorkDay'='dimanche' ,'WorkDay'='samedi')
-# reste a faire créer variable trigonométrique des jours de la semaine
+# transformation des jours de la semaine en coordonnées trigonométriques            
+semaine_trigo=transformation_trigo(Data0$WeekDays,7)
+Data0$WeekDaystrigo_x=semaine_trigo[1]
+Data0$WeekDaystrigo_y=semaine_trigo[2]
