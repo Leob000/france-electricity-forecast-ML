@@ -1,11 +1,16 @@
 - Analyse descriptive sur Rmarkdown
     - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
 - Feature engineering:
-    - Trend Net_demand.1 7 derniers jours?
-    - Représentation de la date, trigonométrique? catégoriel? année en int normalisé?
-
+    - Trend Net_demand.1 7 derniers jours?    (ajouter -2 -8 -6 (les plus corrélés))
+    - Représentation de la date, trigonométrique? catégoriel? année en int normalisé? (jours de la semaine/mois)
+    - ajouter variable été hiver one hot encoding 
+    
 - Implémenter la crossval, ou validation sur les 365 derniers jours
 - Prédictions train et test des algos suivants pour méthode d'ensemble :
+    - Linear (optimisé sur loss quantile ou pas)
     - Random forest, XGBoost
     - GAM
     - ARIMA
+    - multiplier les modèles quantiles pour différents quantiles
+    - LSTM
+    - MLP
