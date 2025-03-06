@@ -41,63 +41,40 @@ features_col
 
 library(randomForest)
 # RandomForest basique
-# TODO Faire OOB error au lieu de val
-# TODO optimisation comme en cours R
-# TODO output 2 csv pred train et test
-# TODO Bootstrap avec arbres?
-VALIDATION <- FALSE
 CHEAT <- TRUE
-if (VALIDATION) { # Sur validation 2021
-    rf_model <- randomForest(as.formula(paste(target_col, "~ .")), data = df_train[, c(features_col, target_col)], importance = TRUE)
-    print(rf_model)
-    predictions <- (predict(rf_model, df_val[, features_col]) * Net_demand_sd) + Net_demand_mean
-    ground_truth <- (df_val$Net_demand * Net_demand_sd) + Net_demand_mean
-    err_OOB <- (rf_model$mse[rf_model$ntree] * Net_demand_sd) + Net_demand_mean
-    print(paste("OOB error (non déstandardisée):", err_OOB))
-    err_pinball <- pinball_loss(ground_truth, predictions, 0.8)
-    print(paste("Pinball on validation set:", err_pinball))
-    err_rmse <- sqrt(mean((ground_truth - predictions)^2))
-    print(paste("RMSE on validation set:", err_rmse))
-    plot(df_val$Date, ground_truth, type = "l", col = "blue", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions vs Ground Truth (Validation 2021)")
-    lines(df_val$Date, predictions, col = "red", lwd = 2)
+# Après essait de toutes les valeurs possibles de mtry (1:39), l'erreur OOB (0.02185) est minimisée pour mtry = 20 (pb 637)
+
+rf_model <- randomForest(as.formula(paste(target_col, "~ .")), data = df_train_val[, c(features_col, target_col)], importance = TRUE, ntree = 500, mtry = 20)
+print(rf_model)
+predictions_test <- (predict(rf_model, df_test[, features_col]) * Net_demand_sd) + Net_demand_mean
+predictions_train <- (predict(rf_model, df_train_val[, features_col]) * Net_demand_sd) + Net_demand_mean
+
+truth_train <- (df_train_val$Net_demand * Net_demand_sd) + Net_demand_mean
+
+err_OOB <- rf_model$mse[rf_model$ntree]
+print(paste("OOB error (non déstandardisée):", err_OOB))
+err_pinball_train <- pinball_loss(truth_train, predictions_train, 0.8)
+print(paste("Pinball on train set:", err_pinball_train))
+err_rmse_train <- sqrt(mean((truth_train - predictions_train)^2))
+print(paste("RMSE on train set:", err_rmse_train))
+
+if (CHEAT) {
+    truth_test <- read.csv("Data/test_better.csv")$Net_demand
+    err_pinball_test <- pinball_loss(truth_test, predictions_test, 0.8)
+    print(paste("Pinball on cheat set:", err_pinball_test))
+    err_rmse_test <- sqrt(mean((truth_test - predictions_test)^2))
+    print(paste("RMSE on cheat set:", err_rmse_test))
+
+    plot(df_test$Date, truth_test, type = "l", col = "blue", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions vs Ground Truth (Cheat 2022)")
+    lines(df_test$Date, predictions_test, col = "red", lwd = 2)
     legend("topright", legend = c("Ground Truth", "Predictions"), col = c("blue", "red"), lwd = 2)
-    plot(rf_model)
-    importance <- importance(rf_model)
-    varImpPlot(rf_model)
+} else {
+    plot(df_test$Date, predictions_test, type = "l", col = "red", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions (2022)")
+    legend("topright", legend = c("Predictions"), col = c("red"), lwd = 2)
 }
-else {
-    rf_model <- randomForest(as.formula(paste(target_col, "~ .")), data = df_train_val[, c(features_col, target_col)], importance = TRUE)
-    print(rf_model)
-    predictions_test <- (predict(rf_model, df_test[, features_col]) * Net_demand_sd) + Net_demand_mean
-    predictions_train <- (predict(rf_model, df_train_val[, features_col]) * Net_demand_sd) + Net_demand_mean
-
-    truth_train <- (df_train_val$Net_demand * Net_demand_sd) + Net_demand_mean
-
-    err_OOB <- (rf_model$mse[rf_model$ntree] * Net_demand_sd) + Net_demand_mean
-    print(paste("OOB error (non déstandardisée):", err_OOB))
-    err_pinball_train <- pinball_loss(truth_train, predictions_train, 0.8)
-    print(paste("Pinball on train set:", err_pinball))
-    err_rmse_train <- sqrt(mean((truth_train - predictions_train)^2))
-    print(paste("RMSE on train set:", err_rmse))
-
-    if (CHEAT) {
-        truth_test <- read.csv("Data/test_better.csv")$Net_demand
-        err_pinball_test <- pinball_loss(truth_test, predictions_test, 0.8)
-        print(paste("Pinball on cheat set:", err_pinball))
-        err_rmse_test <- sqrt(mean((truth_test - predictions_test)^2))
-        print(paste("RMSE on cheat set:", err_rmse))
-
-        plot(df_test$Date, truth_test, type = "l", col = "blue", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions vs Ground Truth (Cheat 2022)")
-        lines(df_test$Date, predictions_test, col = "red", lwd = 2)
-        legend("topright", legend = c("Ground Truth", "Predictions"), col = c("blue", "red"), lwd = 2)
-    } else {
-        plot(df_test$Date, predictions_test, type = "l", col = "red", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions (2022)")
-        legend("topright", legend = c("Predictions"), col = c("red"), lwd = 2)
-    }
-    plot(rf_model)
-    importance <- importance(rf_model)
-    varImpPlot(rf_model)
-}
+plot(rf_model)
+importance <- importance(rf_model)
+varImpPlot(rf_model)
 
 write_csv(as.data.frame(predictions_test), "Data/preds_rf_test.csv")
 write_csv(as.data.frame(predictions_train), "Data/preds_rf_train.csv")
