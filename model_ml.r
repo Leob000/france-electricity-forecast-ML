@@ -92,13 +92,21 @@ if (OOB) {
     print(rf_model)
     predictions_test <- (predict(rf_model, df_test[, features_col]) * Net_demand_sd) + Net_demand_mean
     predictions_train <- (predict(rf_model, df_train_val[, features_col]) * Net_demand_sd) + Net_demand_mean
+
     if (CHEAT) {
         truth_test <- read.csv("Data/test_better.csv")$Net_demand
         truth_train <- (df_train_val$Net_demand * Net_demand_sd) + Net_demand_mean
-        err_pinball <- pinball_loss(truth_test, predictions_test, 0.8)
-        print(paste("Pinball on validation set:", err_pinball))
-        err_rmse <- sqrt(mean((truth_test - predictions_test)^2))
-        print(paste("RMSE on validation set:", err_rmse))
+
+        err_pinball_train <- pinball_loss(truth_train, predictions_train, 0.8)
+        print(paste("Pinball on train set:", err_pinball))
+        err_rmse_train <- sqrt(mean((truth_train - predictions_train)^2))
+        print(paste("RMSE on train set:", err_rmse))
+
+        err_pinball_test <- pinball_loss(truth_test, predictions_test, 0.8)
+        print(paste("Pinball on cheat set:", err_pinball))
+        err_rmse_test <- sqrt(mean((truth_test - predictions_test)^2))
+        print(paste("RMSE on cheat set:", err_rmse))
+
         plot(df_test$Date, truth_test, type = "l", col = "blue", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions vs Ground Truth (Cheat 2022)")
         lines(df_test$Date, predictions_test, col = "red", lwd = 2)
         legend("topright", legend = c("Ground Truth", "Predictions"), col = c("blue", "red"), lwd = 2)
