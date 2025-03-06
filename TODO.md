@@ -2,7 +2,9 @@
     - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
 - modifier également la weighted nebulosity
 - Implémenter la crossval, ou validation sur les 365 derniers jours
+
 - Prédictions train et test des algos suivants pour méthode d'ensemble :
+    - Boostrap avec arbre/autre?
     - Linear (optimisé sur loss quantile ou pas)
     - Random forest, XGBoost
     - GAM
