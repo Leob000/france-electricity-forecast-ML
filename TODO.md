@@ -12,3 +12,5 @@
     - multiplier les modèles quantiles pour différents quantiles
     - LSTM
     - MLP
+
+- Changer les cheat set en validation avant la fin, OOB pour RF
