@@ -10,6 +10,7 @@ df_full <- read_csv("Data/treated_data.csv")
 # On doit remettre en facteur à cause du csv
 df_full$WeekDays <- as.factor(df_full$WeekDays) # 0 = Lundi, 6 = Dimanche
 df_full$BH_Holiday <- as.factor(df_full$BH_Holiday)
+# df_full$weekend <- as.numeric((df_full$WeekDays == 5) | (df_full$WeekDays == 6))
 
 # Normalisation de Net_demand et laggées, en conservant la moyenne et l'écart type pour faire la transformation inverse sur les prédictions
 idx_train_val <- which(df_full$Date <= "2022-09-01")
@@ -36,6 +37,7 @@ df_test <- df_full[idx_test, ]
 target_col <- "Net_demand"
 features_col <- setdiff(names(df_full), target_col)
 features_col <- setdiff(features_col, "Date")
+# features_col <- setdiff(features_col, "WeekDays")
 # features_col <- setdiff(features_col, "lundi_vendredi")
 features_col
 
