@@ -41,7 +41,9 @@ features_col
 
 library(randomForest)
 # RandomForest basique
-# TODO FAire OOB error au lieu de val
+# TODO Faire OOB error au lieu de val
+# TODO optimisation comme en cours R
+# TODO output 2 csv pred train et test
 VALIDATION <- FALSE
 CHEAT <- TRUE
 if (VALIDATION) { # Sur validation 2021
@@ -62,6 +64,9 @@ if (VALIDATION) { # Sur validation 2021
     rf_model <- randomForest(as.formula(paste(target_col, "~ .")), data = df_train_val[, c(features_col, target_col)], importance = TRUE)
     print(rf_model)
     predictions <- (predict(rf_model, df_test[, features_col]) * Net_demand_sd) + Net_demand_mean
+    predictions_train <- (predict(rf_model, df_train_val[, features_col]) * Net_demand_sd) + Net_demand_mean
+    write_csv(predictions, "Data/preds_rf_test.csv") # TODO Check bon csv
+    write_csv(predictions_train, "Data/preds_rf_train") # TODO Idem
     if (CHEAT) {
         ground_truth <- read.csv("Data/test_better.csv")$Net_demand
         err_pinball <- pinball_loss(ground_truth, predictions, 0.8)
