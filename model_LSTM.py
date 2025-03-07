@@ -6,138 +6,80 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_pinball_loss
-
-plt.rcParams["figure.figsize"] = [10, 6]
+import random
 
 COLAB = False
+
+quantile = 0.8
+mse_weight = 0.5
+seq_length = 7  # 60 pas trop mal? 366 bien. Attention si élevé, test_loss se fera que sur peu de valeurs à cause de la taille de la fenêtre.. plutôt se baser sur la valeur à la fin
+batch_size = 128  # Semble vite fait améliorer perf si ~300, mais besoin de plus d'epochs -> Optimiser à la fin? faire 64 sinon en test
+hidden_size = (
+    128  # décroît 400+ .0271/.0897, 1000 trop, pas test entre 400-1000; test avec 128
+)
+num_layers = 2  # 2-4 semble pas mal
+output_size = 1
+num_epochs = 22
+learning_rate = 0.001  # .0005 semble meilleur que .001
+dropout = 0.0
+
+seed = 10
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+plt.rcParams["figure.figsize"] = [10, 6]
 # %%
 device = torch.device("cpu")
 if COLAB:
     from google.colab import drive  # type: ignore
 
     drive.mount("/content/drive")
-    df_full = pd.read_parquet("drive/MyDrive/data/full_treated.parquet")
+    model_path = "drive/MyDrive/data/lstm_forecast_model.pth"
+    df_full = pd.read_csv("drive/MyDrive/data/treated_data.csv")
+    df_results = pd.read_csv("drive/MyDrive/data/test_better.csv")[-395:]
     if torch.cuda.is_available():
         device = torch.device("cuda")  # Colab GPU
 else:
-    df_full = pd.read_parquet("Data/full_treated.parquet")
+    model_path = "Data/lstm_forecast_model.pth"
+    df_full = pd.read_csv("Data/treated_data.csv")
+    df_results = pd.read_csv("Data/test_better.csv")[-395:]
     if torch.backends.mps.is_available():
         device = torch.device("mps")  # MacOS GPU
 
 print("Device used:", device)
 # %%
-# Load and sort the data (adjust file path as needed)
-df_full_noscale = df_full.copy()
-df_full["Year"] = df_full["Year"].astype(float)
+df_full["Date"] = pd.to_datetime(df_full["Date"])
+df_full = df_full.set_index("Date")
 
-# Séparation des datasets
-df_train = df_full[df_full.index < "2022-09-02"]
-df_test = df_full[df_full.index >= "2022-09-02"]
+df_full = pd.get_dummies(data=df_full, columns=["WeekDays", "BH_Holiday"], dtype=int)
+# %%
+target_col = "Net_demand"
+feature_cols = df_full.columns.to_list()
+feature_cols.remove(target_col)
+# %%
+# TODO Cheat remove
+df_full.loc[df_full.index >= "2022-09-02", "Net_demand"] = df_results[
+    "Net_demand"
+].values[: len(df_full[df_full.index >= "2022-09-02"])]
+# %%
+# Normalization des Net_demand
+df_train_val = df_full[df_full.index <= "2022-09-01"]
+f_mean = df_train_val["Net_demand"].mean()
+f_std = df_train_val["Net_demand"].std()
+for feature in ["Net_demand", "Net_demand.1", "Net_demand.7"]:
+    df_full[feature] = (df_full[feature] - f_mean) / f_std
 
-# Scaling
-feature_to_scale = [
-    "Load.1",
-    # "Load.7",
-    "Net_demand",
-    "Temp",
-    "Temp_s95",
-    "Temp_s99",
-    "Temp_s95_min",
-    "Temp_s95_max",
-    "Temp_s99_min",
-    "Temp_s99_max",
-    "Wind",
-    "Wind_weighted",
-    "Nebulosity",
-    "Nebulosity_weighted",
-    "Year",
-    "Solar_power.1",
-    # "Solar_power.7",
-    "Wind_power.1",
-    # "Wind_power.7",
-    # "Net_demand.1",
-    # "Net_demand.7",
-]
-
-# On scale dans df_train en gardant les scalers
-scalers = {}
-for col in feature_to_scale:
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    df_train.loc[:, col] = scaler.fit_transform(df_train[[col]])
-    scalers[col] = scaler
-
-# On scale df_test avec les scalers de df_train
-for feature in scalers.keys():
-    scaler = scalers[feature]
-    df_test.loc[:, feature] = scaler.transform(df_test[[feature]])
-
-
-# Fonction pour scale les variables lag comme sa variable classique correspondante
-def lagged_value_scaler(df, from_feature, to_lagged_feature):
-    min = scalers[from_feature].data_min_[0]
-    max = scalers[from_feature].data_max_[0]
-    df.loc[:, to_lagged_feature] = (df[to_lagged_feature] - min) / (max - min)
-
-
-# Scale de certaines variables selon le scaling des autres
-for df in [df_train, df_test]:
-    lagged_value_scaler(df, "Load.1", "Load.7")
-    lagged_value_scaler(df, "Solar_power.1", "Solar_power.7")
-    lagged_value_scaler(df, "Wind_power.1", "Wind_power.7")
-    lagged_value_scaler(df, "Net_demand", "Net_demand.1")
-    lagged_value_scaler(df, "Net_demand", "Net_demand.7")
-
-# Pour rescale:
-# scalers["feature"].inverse_transform(df["feature"].to_numpy().reshape(-1,1))
 
 # %%
-feature_cols = df_full.columns.to_list()
-feature_cols.remove("Net_demand")
-
-# TODO test
-feature_cols = [
-    "Load.1",
-    # "Load.7",
-    "Net_demand",
-    "Temp",
-    "Temp_s95",
-    "Temp_s99",
-    "Temp_s95_min",
-    "Temp_s95_max",
-    "Temp_s99_min",
-    "Temp_s99_max",
-    "Wind",
-    # "Wind_weighted",
-    "Nebulosity",
-    # "Nebulosity_weighted",
-    # "BH_before",
-    "BH",
-    # "BH_after",
-    "Year",
-    "DLS",
-    "Summer_break",
-    "Christmas_break",
-    "Holiday",
-    # "Holiday_zone_a",
-    # "Holiday_zone_b",
-    # "Holiday_zone_c",
-    "BH_Holiday",
-    "Solar_power.1",
-    # "Solar_power.7",
-    "Wind_power.1",
-    # "Wind_power.7",
-    "Net_demand.1",
-    "Net_demand.7",
-    "sin_dayofweek",
-    "cos_dayofweek",
-    "sin_dayofyear",
-    "cos_dayofyear",
-    # "is_weekend",
-]
-
-target_col = "Net_demand"
+# TODO Créer un validation set, enlever cheat
+df_train = df_full[df_full.index <= "2022-09-01"]
+df_test = df_full[df_full.index >= "2022-09-02"]
 
 
 # %%
@@ -171,55 +113,77 @@ class TimeSeriesDataset(Dataset):
 # %%
 class LSTMForecast(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, output_size, dropout):
-        """
-        Args:
-            input_size (int): Number of features (e.g., 2 if using Net_demand and Net_demand.1).
-            hidden_size (int): Number of hidden units.
-            num_layers (int): Number of LSTM layers.
-            output_size (int): Dimension of the forecast output.
-        """
         super(LSTMForecast, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        # LSTM layer (batch_first=True so input shape is (batch, seq_length, input_size))
         self.lstm = nn.LSTM(
             input_size, hidden_size, num_layers, batch_first=True, dropout=dropout
         )
-        # Fully connected layer mapping hidden state to the output
+        # Add a LayerNorm to stabilize the output from LSTM
+        self.layer_norm = nn.LayerNorm(hidden_size)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        # Initialize hidden and cell states with zeros
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        # Get LSTM outputs
         out, _ = self.lstm(x, (h0, c0))
-        # Use the output from the last time step
+        # Use the last time step's output
         out = out[:, -1, :]
+        # Apply layer normalization
+        out = self.layer_norm(out)
         out = self.fc(out)
         return out
 
 
 # %%
-class PinballLoss(nn.Module):
-    def __init__(self, quantile=0.8):
-        super(PinballLoss, self).__init__()
+class PinballLoss:
+    def __init__(self, quantile=0.8, reduction="mean"):
         self.quantile = quantile
+        assert 0 < self.quantile
+        assert self.quantile < 1
+        self.reduction = reduction
 
-    def forward(self, predictions, targets):
-        errors = targets - predictions
-        loss = torch.max(self.quantile * errors, (self.quantile - 1) * errors)
-        # loss = self.quantile * torch.max(targets - predictions, 0) + (
-        #     1 - self.quantile
-        # ) * torch.max(predictions - targets, 0)
-        return torch.mean(loss)
+    def __call__(self, output, target):
+        assert output.shape == target.shape
+        loss = torch.zeros_like(target, dtype=torch.float)
+        error = output - target  # inverser?
+        smaller_index = error < 0
+        bigger_index = 0 < error
+        loss[smaller_index] = self.quantile * (abs(error)[smaller_index])
+        loss[bigger_index] = (1 - self.quantile) * (abs(error)[bigger_index])
+
+        if self.reduction == "sum":
+            loss = loss.sum()
+        if self.reduction == "mean":
+            loss = loss.mean()
+
+        return loss
+
+
+class CombinedLoss(nn.Module):
+    def __init__(self, quantile=0.8, mse_weight=0.5, reduction="mean"):
+        super(CombinedLoss, self).__init__()
+        self.pinball = PinballLoss(quantile=quantile, reduction=reduction)
+        self.mse = nn.MSELoss(reduction=reduction)
+        self.mse_weight = mse_weight
+
+    def forward(self, output, target):
+        loss_pinball = self.pinball(output, target)
+        loss_mse = self.mse(output, target)
+        # Combine the losses: adjust mse_weight as needed
+        loss = loss_pinball + self.mse_weight * loss_mse
+        return loss
 
 
 def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
-    model.train()
+    # model.train() # Marchait quand étais en dehors de double boucle, ici
+    train_losses = []
+    test_losses = []
+
     for epoch in range(num_epochs):
-        epoch_loss = 0.0
+        model.train()
+        running_loss = 0.0
         for x_batch, y_batch in train_loader:
             x_batch = x_batch.to(device)
             y_batch = y_batch.to(device)
@@ -229,10 +193,27 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
             loss = criterion(outputs, y_batch.view(-1, 1))
             loss.backward()
             optimizer.step()
-            epoch_loss += loss.item()
+            running_loss += loss.item()
 
-        avg_loss = epoch_loss / len(train_loader)
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_loss:.4f}")
+        # Calculate average training loss for the epoch
+        train_loss = running_loss / len(train_loader)
+        train_losses.append(train_loss)
+
+        # Evaluate on test set
+        test_loss = evaluate_model(model, test_loader, criterion, device)
+        test_losses.append(test_loss)
+
+        print(
+            f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}"
+        )
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label="Train Loss")
+    plt.plot(test_losses, label="Test Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Train/Test Loss over Epochs")
+    plt.legend()
+    plt.show()
 
 
 # %%
@@ -284,29 +265,38 @@ def forecast(model, input_seq, steps, device):
     return predictions
 
 
-# Set the sequence length (number of past days used as input)
-seq_length = 60  # Meilleur avec 60 * 2
+def evaluate_model(model, data_loader, criterion, device):
+    model.eval()
+    total_loss = 0.0
+    with torch.no_grad():
+        for x_batch, y_batch in data_loader:
+            x_batch = x_batch.to(device)
+            y_batch = y_batch.to(device)
+            outputs = model(x_batch)
+            loss = criterion(outputs, y_batch.view(-1, 1))
+            total_loss += loss.item()
+    return total_loss / len(data_loader)
+
 
 # Create the dataset and data loader.
 dataset = TimeSeriesDataset(df_train, feature_cols, target_col, seq_length)
-train_loader = DataLoader(dataset, batch_size=32 * 2, shuffle=True)
+train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+test_dataset = TimeSeriesDataset(df_test, feature_cols, target_col, seq_length)
+test_loader = DataLoader(test_dataset, batch_size=395, shuffle=False)
+
 
 # %%
 # Hyperparameters
 input_size = len(feature_cols)  # e.g., 2 features
-hidden_size = 100
-num_layers = 4
-output_size = 1
-num_epochs = 25
-learning_rate = 0.001
-dropout = 0.1
 
 # Initialize model, loss function, and optimizer.
 model = LSTMForecast(input_size, hidden_size, num_layers, output_size, dropout).to(
     device
 )
-criterion = nn.MSELoss()
-# criterion = PinballLoss(quantile=0.8)
+# criterion = nn.MSELoss()
+# criterion = PinballLoss(quantile=quantile)
+criterion = CombinedLoss(quantile=quantile, mse_weight=mse_weight)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # %%
@@ -314,38 +304,39 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 train_model(model, train_loader, criterion, optimizer, num_epochs, device)
 
 # %%
-df_final = pd.concat([df_train, df_test])
 idx = df_train.index.max()
-
-scaler = scalers[target_col]
 steps = 1
 
 # Boucle pour sélectionner la séquence à input dans le LSTM
 preds = []
 for _ in range(395):
-    last_seq = df_final.loc[df_final.index <= idx, feature_cols].values[-seq_length:]
+    last_seq = df_full.loc[df_full.index <= idx, feature_cols].values[-seq_length:]
     preds.append(forecast(model, last_seq, steps, device))
     idx += pd.Timedelta(days=1)
 
 preds_array = np.array(preds)
-preds_original = scaler.inverse_transform(preds_array)
-
+preds_original = (preds_array * f_std) + f_mean
 # %%
-truth = df_full_noscale.loc[df_full_noscale.index >= "2022-09-02", ["Net_demand"]]
-truth["pred"] = preds_original
+df_results["Date"] = pd.to_datetime(df_results["Date"])
+df_results = df_results.set_index("Date")[["Net_demand"]]
+df_results["preds"] = 0
+df_results["preds"] = preds_original
 # %%
-plt.plot(truth["Net_demand"])
-plt.plot(truth["pred"])
+plt.plot(df_results["Net_demand"])
+plt.plot(df_results["preds"])
 plt.show()
 # %%
-err = mean_pinball_loss(truth["Net_demand"], truth["pred"], alpha=0.8)
-print(err)
+err = mean_pinball_loss(df_results["Net_demand"], df_results["preds"], alpha=0.8)
+print("Pinball:", err)
 # %%
-x_axis = range(-3500, 1500, 100)
+x_axis = range(-1500, 1500, 100)
 err_li = []
 for i in x_axis:
-    err = mean_pinball_loss(truth["Net_demand"], truth["pred"] + i, alpha=0.8)
+    err = mean_pinball_loss(
+        df_results["Net_demand"], df_results["preds"] + i, alpha=0.8
+    )
     err_li.append(err)
 
 plt.plot(x_axis, err_li)
 # %%
+torch.save(model.state_dict(), model_path)
