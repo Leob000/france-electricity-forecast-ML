@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import mean_pinball_loss
+import random
 
-COLAB = True
-# 10 30
+COLAB = False
 
 quantile = 0.8
 mse_weight = 0.5
@@ -20,13 +20,9 @@ hidden_size = (
 )
 num_layers = 2  # 2-4 semble pas mal
 output_size = 1
-num_epochs = 28
+num_epochs = 22
 learning_rate = 0.001  # .0005 semble meilleur que .001
 dropout = 0.0
-
-import torch
-import numpy as np
-import random
 
 seed = 10
 random.seed(seed)
@@ -117,32 +113,25 @@ class TimeSeriesDataset(Dataset):
 # %%
 class LSTMForecast(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, output_size, dropout):
-        """
-        Args:
-            input_size (int): Number of features (e.g., 2 if using Net_demand and Net_demand.1).
-            hidden_size (int): Number of hidden units.
-            num_layers (int): Number of LSTM layers.
-            output_size (int): Dimension of the forecast output.
-        """
         super(LSTMForecast, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        # LSTM layer (batch_first=True so input shape is (batch, seq_length, input_size))
         self.lstm = nn.LSTM(
             input_size, hidden_size, num_layers, batch_first=True, dropout=dropout
         )
-        # Fully connected layer mapping hidden state to the output
+        # Add a LayerNorm to stabilize the output from LSTM
+        self.layer_norm = nn.LayerNorm(hidden_size)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        # Initialize hidden and cell states with zeros
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        # Get LSTM outputs
         out, _ = self.lstm(x, (h0, c0))
-        # Use the output from the last time step
+        # Use the last time step's output
         out = out[:, -1, :]
+        # Apply layer normalization
+        out = self.layer_norm(out)
         out = self.fc(out)
         return out
 
