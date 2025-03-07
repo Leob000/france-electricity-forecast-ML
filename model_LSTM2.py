@@ -10,14 +10,14 @@ from sklearn.metrics import mean_pinball_loss
 
 COLAB = False
 
-seq_length = 10  # 60 pas trop mal?
-batch_size = 64
-hidden_size = 50
-num_layers = 4
+seq_length = 366  # 60 pas trop mal? 366 bien
+batch_size = 64  # Semble vite fait améliorer perf si ~300, mais besoin de plus d'epochs -> Optimiser à la fin?
+hidden_size = 128  # décroît 400+ .0271/.0897, 1000 trop, pas test entre 400-1000
+num_layers = 2  # 2-4 semble pas mal
 output_size = 1
-num_epochs = 2
-learning_rate = 0.001
-dropout = 0.1
+num_epochs = 50
+learning_rate = 0.0005
+dropout = 0.0
 
 plt.rcParams["figure.figsize"] = [10, 6]
 # %%
@@ -128,18 +128,28 @@ class LSTMForecast(nn.Module):
 
 # %%
 # TODO Faire marcher pinball ou la supprimer
-class PinballLoss(nn.Module):
-    def __init__(self, quantile=0.8):
-        super(PinballLoss, self).__init__()
+class PinballLoss:
+    def __init__(self, quantile=0.8, reduction="mean"):
         self.quantile = quantile
+        assert 0 < self.quantile
+        assert self.quantile < 1
+        self.reduction = reduction
 
-    def forward(self, predictions, targets):
-        errors = targets - predictions
-        loss = torch.max(self.quantile * errors, (self.quantile - 1) * errors)
-        # loss = self.quantile * torch.max(targets - predictions, 0) + (
-        #     1 - self.quantile
-        # ) * torch.max(predictions - targets, 0)
-        return torch.mean(loss)
+    def __call__(self, output, target):
+        assert output.shape == target.shape
+        loss = torch.zeros_like(target, dtype=torch.float)
+        error = output - target  # inverser?
+        smaller_index = error < 0
+        bigger_index = 0 < error
+        loss[smaller_index] = self.quantile * (abs(error)[smaller_index])
+        loss[bigger_index] = (1 - self.quantile) * (abs(error)[bigger_index])
+
+        if self.reduction == "sum":
+            loss = loss.sum()
+        if self.reduction == "mean":
+            loss = loss.mean()
+
+        return loss
 
 
 def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
@@ -260,8 +270,8 @@ input_size = len(feature_cols)  # e.g., 2 features
 model = LSTMForecast(input_size, hidden_size, num_layers, output_size, dropout).to(
     device
 )
-criterion = nn.MSELoss()
-# criterion = PinballLoss(quantile=0.8)
+# criterion = nn.MSELoss()
+criterion = PinballLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # %%
