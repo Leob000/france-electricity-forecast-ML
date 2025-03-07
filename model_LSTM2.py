@@ -11,6 +11,7 @@ from sklearn.metrics import mean_pinball_loss
 COLAB = False
 
 seq_length = 10  # 60 pas trop mal?
+batch_size = 64
 hidden_size = 50
 num_layers = 4
 output_size = 1
@@ -45,6 +46,11 @@ df_full = pd.get_dummies(data=df_full, columns=["WeekDays", "BH_Holiday"], dtype
 target_col = "Net_demand"
 feature_cols = df_full.columns.to_list()
 feature_cols.remove(target_col)
+# %%
+# TODO Cheat remove
+df_full.loc[df_full.index >= "2022-09-02", "Net_demand"] = df_results[
+    "Net_demand"
+].values[: len(df_full[df_full.index >= "2022-09-02"])]
 # %%
 # Normalization des Net_demand
 df_train_val = df_full[df_full.index <= "2022-09-01"]
@@ -137,9 +143,13 @@ class PinballLoss(nn.Module):
 
 
 def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
-    model.train()
+    # model.train() # Marchait quand étais en dehors de double boucle, ici
+    train_losses = []
+    test_losses = []
+
     for epoch in range(num_epochs):
-        epoch_loss = 0.0
+        model.train()
+        running_loss = 0.0
         for x_batch, y_batch in train_loader:
             x_batch = x_batch.to(device)
             y_batch = y_batch.to(device)
@@ -149,10 +159,27 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, device):
             loss = criterion(outputs, y_batch.view(-1, 1))
             loss.backward()
             optimizer.step()
-            epoch_loss += loss.item()
+            running_loss += loss.item()
 
-        avg_loss = epoch_loss / len(train_loader)
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_loss:.4f}")
+        # Calculate average training loss for the epoch
+        train_loss = running_loss / len(train_loader)
+        train_losses.append(train_loss)
+
+        # Evaluate on test set
+        test_loss = evaluate_model(model, test_loader, criterion, device)
+        test_losses.append(test_loss)
+
+        print(
+            f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}"
+        )
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label="Train Loss")
+    plt.plot(test_losses, label="Test Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Train/Test Loss over Epochs")
+    plt.legend()
+    plt.show()
 
 
 # %%
@@ -204,9 +231,26 @@ def forecast(model, input_seq, steps, device):
     return predictions
 
 
+def evaluate_model(model, data_loader, criterion, device):
+    model.eval()
+    total_loss = 0.0
+    with torch.no_grad():
+        for x_batch, y_batch in data_loader:
+            x_batch = x_batch.to(device)
+            y_batch = y_batch.to(device)
+            outputs = model(x_batch)
+            loss = criterion(outputs, y_batch.view(-1, 1))
+            total_loss += loss.item()
+    return total_loss / len(data_loader)
+
+
 # Create the dataset and data loader.
 dataset = TimeSeriesDataset(df_train, feature_cols, target_col, seq_length)
-train_loader = DataLoader(dataset, batch_size=32 * 2, shuffle=True)
+train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+test_dataset = TimeSeriesDataset(df_test, feature_cols, target_col, seq_length)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
 
 # %%
 # Hyperparameters
