@@ -9,18 +9,33 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import mean_pinball_loss
 
 COLAB = True
+# 10 30
 
 quantile = 0.8
+mse_weight = 0.5
 seq_length = 7  # 60 pas trop mal? 366 bien. Attention si élevé, test_loss se fera que sur peu de valeurs à cause de la taille de la fenêtre.. plutôt se baser sur la valeur à la fin
-batch_size = 64  # Semble vite fait améliorer perf si ~300, mais besoin de plus d'epochs -> Optimiser à la fin? faire 64 sinon en test
+batch_size = 128  # Semble vite fait améliorer perf si ~300, mais besoin de plus d'epochs -> Optimiser à la fin? faire 64 sinon en test
 hidden_size = (
-    100  # décroît 400+ .0271/.0897, 1000 trop, pas test entre 400-1000; test avec 128
+    128  # décroît 400+ .0271/.0897, 1000 trop, pas test entre 400-1000; test avec 128
 )
 num_layers = 2  # 2-4 semble pas mal
 output_size = 1
-num_epochs = 20
-learning_rate = 0.0005  # .0005 semble meilleur que .001
+num_epochs = 28
+learning_rate = 0.001  # .0005 semble meilleur que .001
 dropout = 0.0
+
+import torch
+import numpy as np
+import random
+
+seed = 10
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 
 plt.rcParams["figure.figsize"] = [10, 6]
 # %%
@@ -29,11 +44,13 @@ if COLAB:
     from google.colab import drive  # type: ignore
 
     drive.mount("/content/drive")
+    model_path = "drive/MyDrive/data/lstm_forecast_model.pth"
     df_full = pd.read_csv("drive/MyDrive/data/treated_data.csv")
     df_results = pd.read_csv("drive/MyDrive/data/test_better.csv")[-395:]
     if torch.cuda.is_available():
         device = torch.device("cuda")  # Colab GPU
 else:
+    model_path = "Data/lstm_forecast_model.pth"
     df_full = pd.read_csv("Data/treated_data.csv")
     df_results = pd.read_csv("Data/test_better.csv")[-395:]
     if torch.backends.mps.is_available():
@@ -152,6 +169,21 @@ class PinballLoss:
         if self.reduction == "mean":
             loss = loss.mean()
 
+        return loss
+
+
+class CombinedLoss(nn.Module):
+    def __init__(self, quantile=0.8, mse_weight=0.5, reduction="mean"):
+        super(CombinedLoss, self).__init__()
+        self.pinball = PinballLoss(quantile=quantile, reduction=reduction)
+        self.mse = nn.MSELoss(reduction=reduction)
+        self.mse_weight = mse_weight
+
+    def forward(self, output, target):
+        loss_pinball = self.pinball(output, target)
+        loss_mse = self.mse(output, target)
+        # Combine the losses: adjust mse_weight as needed
+        loss = loss_pinball + self.mse_weight * loss_mse
         return loss
 
 
@@ -274,7 +306,8 @@ model = LSTMForecast(input_size, hidden_size, num_layers, output_size, dropout).
     device
 )
 # criterion = nn.MSELoss()
-criterion = PinballLoss(quantile=quantile)
+# criterion = PinballLoss(quantile=quantile)
+criterion = CombinedLoss(quantile=quantile, mse_weight=mse_weight)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # %%
@@ -317,3 +350,4 @@ for i in x_axis:
 
 plt.plot(x_axis, err_li)
 # %%
+torch.save(model.state_dict(), model_path)
