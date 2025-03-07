@@ -2,6 +2,8 @@
 Au point?
 
 # Feature eng
+- Changer représentation date, voir RBF, Fourrier
+- Tester TFT
 - Etude de la corrélation des variables? Eliminer une des deux weighted/non-weighted?
 - Modifier également la weighted nebulosity
 
