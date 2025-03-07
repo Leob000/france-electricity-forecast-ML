@@ -8,15 +8,18 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import mean_pinball_loss
 
-COLAB = False
+COLAB = True
 
-seq_length = 366  # 60 pas trop mal? 366 bien
-batch_size = 64  # Semble vite fait améliorer perf si ~300, mais besoin de plus d'epochs -> Optimiser à la fin?
-hidden_size = 128  # décroît 400+ .0271/.0897, 1000 trop, pas test entre 400-1000
+quantile = 0.8
+seq_length = 7  # 60 pas trop mal? 366 bien. Attention si élevé, test_loss se fera que sur peu de valeurs à cause de la taille de la fenêtre.. plutôt se baser sur la valeur à la fin
+batch_size = 64  # Semble vite fait améliorer perf si ~300, mais besoin de plus d'epochs -> Optimiser à la fin? faire 64 sinon en test
+hidden_size = (
+    100  # décroît 400+ .0271/.0897, 1000 trop, pas test entre 400-1000; test avec 128
+)
 num_layers = 2  # 2-4 semble pas mal
 output_size = 1
-num_epochs = 50
-learning_rate = 0.0005
+num_epochs = 20
+learning_rate = 0.0005  # .0005 semble meilleur que .001
 dropout = 0.0
 
 plt.rcParams["figure.figsize"] = [10, 6]
@@ -58,6 +61,7 @@ f_mean = df_train_val["Net_demand"].mean()
 f_std = df_train_val["Net_demand"].std()
 for feature in ["Net_demand", "Net_demand.1", "Net_demand.7"]:
     df_full[feature] = (df_full[feature] - f_mean) / f_std
+
 
 # %%
 # TODO Créer un validation set, enlever cheat
@@ -127,7 +131,6 @@ class LSTMForecast(nn.Module):
 
 
 # %%
-# TODO Faire marcher pinball ou la supprimer
 class PinballLoss:
     def __init__(self, quantile=0.8, reduction="mean"):
         self.quantile = quantile
@@ -259,7 +262,7 @@ dataset = TimeSeriesDataset(df_train, feature_cols, target_col, seq_length)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 test_dataset = TimeSeriesDataset(df_test, feature_cols, target_col, seq_length)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=395, shuffle=False)
 
 
 # %%
@@ -271,7 +274,7 @@ model = LSTMForecast(input_size, hidden_size, num_layers, output_size, dropout).
     device
 )
 # criterion = nn.MSELoss()
-criterion = PinballLoss()
+criterion = PinballLoss(quantile=quantile)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # %%
