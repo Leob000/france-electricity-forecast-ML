@@ -37,3 +37,4 @@ Au point? -> oui mais en fait beaucoup plus intéressant la recherche de bruit b
 # NPO+++
 - Mieux de réduire un peu les prédictions du fait de l'erreur pinball 0.8, faire genre un -500 sur le modèle final?
 - Changer les cheat set en validation avant la fin, OOB pour RF  => pas compris 
+- Mettre Data/covid_data.csv sur github
