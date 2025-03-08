@@ -137,5 +137,9 @@ for (feature_pair in features_to_normalize_multiple) {
   df_full[[second_feature]] <- (df_full[[second_feature]] - f_mean) / f_sd
 }
 
+df_covid <- read_csv("Data/covid_data.csv")
+df_full <- df_full %>%
+  left_join(df_covid, by = "Date")
+
 # On sauvegarde les résultats en csv pour les réutiliser ailleurs
 write_csv(df_full, "Data/treated_data.csv")
