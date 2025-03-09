@@ -9,19 +9,19 @@ plt.rcParams["figure.figsize"] = [10, 6]
 
 CHEAT = True  # REM
 
-MODELS_FOR_MLP = ["RF", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "gam"]
 
 # %%
 # Importation et formattage de toutes les preds, pour test et pour train
 df_rf_test = pd.read_csv("Data/preds_rf_test.csv")
 df_rf_train = pd.read_csv("Data/preds_rf_train.csv")
-df_tft_test = pd.read_csv("Data/preds_tft.csv")
+df_tft_test = pd.read_csv("Data/preds_tft_new.csv")
 df_tft_train = pd.read_csv("Data/preds_tft_train.csv")
 df_gam_test = pd.read_csv("Data/preds_gam_test.csv")
 df_gam_train = pd.read_csv("Data/preds_gam_train.csv")
 df_truth_train = pd.read_csv("Data/treated_data.csv")
 
 df_truth_test = pd.read_csv("Data/test_better.csv")  # REM
+# %%
 
 df_rf_test.index = pd.date_range(start="2022-09-02", periods=len(df_rf_test), freq="D")
 df_rf_test.rename(columns={"predictions_test": "RF"}, inplace=True)
@@ -62,25 +62,29 @@ preds_train = pd.merge(
     left=df_rf_train, right=df_tft_train, left_index=True, right_index=True
 )
 
+# %%
 df_gam_test.index = pd.date_range(
     start="2022-09-02", periods=len(df_gam_test), freq="D"
 )
 df_gam_test.rename(columns={"Net_demand": "gam"}, inplace=True)
+# %%
 
 preds_test = pd.merge(
     left=preds_test, right=df_gam_test["gam"], right_index=True, left_index=True
 )
-
+# %%
 df_gam_train.index = pd.date_range(
     start="2013-03-02", periods=len(df_gam_train), freq="D"
 )
 df_gam_train.rename(columns={"Net_demand": "gam"}, inplace=True)
-df_gam_train = df_gam_train.iloc[10:]
+# %%
 
+df_gam_train = df_gam_train.iloc[10:]
 preds_train = pd.merge(
     left=preds_train, right=df_gam_train["gam"], right_index=True, left_index=True
 )
 
+# %%
 df_truth_train.index = pd.date_range(
     start="2013-03-02", periods=len(df_truth_train), freq="D"
 )
@@ -170,7 +174,6 @@ if CHEAT:
                     preds_test["target"], preds_test["aggregate"], alpha=0.8
                 ),
             )
-# Best: 0.5 gam + 0.5 (q1 - 1300)
 
 # %%
 if "aggregate" in preds_train.columns:
@@ -210,72 +213,73 @@ df_mlp_test = pd.merge(
 df_mlp_test.drop(columns=["target_y"], inplace=True)
 df_mlp_test.rename(columns={"target_x": "target"}, inplace=True)
 # %%
+MODELS_FOR_MLP = ["RF", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "gam"]
 for df in [df_mlp_train, df_mlp_test]:
     for f in MODELS_FOR_MLP:
         df[f] = (df[f] - f_mean) / f_std
 # %%
 to_keep = [
     # "Date",
-    "Load.1",
-    "Load.7",
     # "target",
-    "Temp",
-    "Temp_s95",
-    "Temp_s99",
-    "Temp_s95_min",
-    "Temp_s95_max",
-    "Temp_s99_min",
-    "Temp_s99_max",
-    "Wind",
-    "Wind_weighted_ratio",
-    "Nebulosity",
-    "Nebulosity_weighted_ratio",
-    "BH_before",
-    "BH",
-    "BH_after",
+    # "Load.1",
+    # "Load.7",
+    # "Temp",
+    # "Temp_s95",
+    # "Temp_s99",
+    # "Temp_s95_min",
+    # "Temp_s95_max",
+    # "Temp_s99_min",
+    # "Temp_s99_max",
+    # "Wind",
+    # "Wind_weighted_ratio",
+    # "Nebulosity",
+    # "Nebulosity_weighted_ratio",
+    # "BH_before",
+    # "BH",
+    # "BH_after",
     "Year",
-    "DLS",
-    "Summer_break",
-    "Christmas_break",
-    "Holiday",
-    "Holiday_zone_a",
-    "Holiday_zone_b",
-    "Holiday_zone_c",
-    "Solar_power.1",
-    "Solar_power.7",
-    "Wind_power.1",
-    "Wind_power.7",
-    "Net_demand.1",
-    "Net_demand.7",
-    "Net_demand.1_trend",
-    "x_dayofyear",
-    "y_dayofyear",
-    "x_dayofweek",
-    "y_dayofweek",
-    "lundi_vendredi",
-    "flag_temp",
-    "GovernmentResponseIndex_Average",
-    "ContainmentHealthIndex_Average",
+    # "DLS",
+    # "Summer_break",
+    # "Christmas_break",
+    # "Holiday",
+    # "Holiday_zone_a",
+    # "Holiday_zone_b",
+    # "Holiday_zone_c",
+    # "Solar_power.1",
+    # "Solar_power.7",
+    # "Wind_power.1",
+    # "Wind_power.7",
+    # "Net_demand.1",
+    # "Net_demand.7",
+    # "Net_demand.1_trend",
+    # "x_dayofyear",
+    # "y_dayofyear",
+    # "x_dayofweek",
+    # "y_dayofweek",
+    # "lundi_vendredi",
+    # "flag_temp",
+    # "GovernmentResponseIndex_Average",
+    # "ContainmentHealthIndex_Average",
     "time_idx",
-    "WeekDays_0",
-    "WeekDays_1",
-    "WeekDays_2",
-    "WeekDays_3",
-    "WeekDays_4",
-    "WeekDays_5",
-    "WeekDays_6",
-    "BH_Holiday_0",
-    "BH_Holiday_1",
-    "BH_Holiday_10",
-    "BH_Holiday_11",
-    "RF",
+    # "WeekDays_0",
+    # "WeekDays_1",
+    # "WeekDays_2",
+    # "WeekDays_3",
+    # "WeekDays_4",
+    # "WeekDays_5",
+    # "WeekDays_6",
+    # "BH_Holiday_0",
+    # "BH_Holiday_1",
+    # "BH_Holiday_10",
+    # "BH_Holiday_11",
+    # "RF",
     "q0",
-    "q1",
-    "q2",
-    "q3",
-    "q4",
-    "q5",
-    "q6",
+    # "q1",
+    # "q2",
+    # "q3",
+    # "q4",
+    # "q5",
+    # "q6",
     "gam",
 ]
 y_train = df_mlp_train["target"]
@@ -284,17 +288,21 @@ y_test = df_mlp_test["target"]
 X_test = df_mlp_test[to_keep].values
 
 model = MLPRegressor(
-    hidden_layer_sizes=(128, 128, 64, 32),
+    hidden_layer_sizes=(395),
     # alpha=0.0008,
-    alpha=0.000,
-    learning_rate_init=0.0001,
+    alpha=0.001,
+    beta_1=0.9,
+    beta_2=0.999,
+    epsilon=1e-08,
+    # early_stopping=True,
+    learning_rate_init=0.0001,  # 0.0001
     verbose=True,
     activation="relu",
     solver="adam",
-    batch_size=128,
-    tol=0.0000000000001,
+    batch_size=128,  # 128
+    tol=0.00001,
     n_iter_no_change=10000,
-    max_iter=500,
+    max_iter=100,  # 100
     random_state=42,
 )
 
@@ -314,4 +322,14 @@ print(
     mean_pinball_loss(preds_test["target"], preds_test["mlp"], alpha=0.8),
 )
 # %%
+params = model.get_params()
+preds_train_saved = preds_train["mlp"]
+preds_test_saved = preds_test["mlp"]
+# Err 440/326
+# %%
+preds_test_mlp_df = pd.DataFrame(preds_test["mlp"])
+preds_test_mlp_df.rename(columns={"mlp": "Net_demand"}, inplace=True)
+preds_test_mlp_df["Id"] = np.arange(len(preds_test_mlp_df)) + 1
+preds_test_mlp_df = preds_test_mlp_df[["Id", "Net_demand"]]
+preds_test_mlp_df.to_csv("Data/preds_mlp.csv", index=False, header=["Id", "Net_demand"])
 # plt.plot(preds_test["mlp"])
