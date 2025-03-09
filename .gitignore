@@ -1,11 +1,12 @@
 # mystuff
 Cours/
-Data/
 my_stuff/
 lightning_logs/
 data_formatters/
 expt_settings/
 test_*.py
+Data/*.csv
+!Data/covid_data.csv
 
 # macOS
 .DS_Store

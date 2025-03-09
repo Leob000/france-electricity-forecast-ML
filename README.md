@@ -1,0 +1,1 @@
+![Schéma grossier des fichiers](Data/schema.png)
