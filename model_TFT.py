@@ -75,7 +75,7 @@ else:  # Validation sur les 2 derniers jours du train set
     df_train = df_full[df_full["date"] <= "2022-09-01"]
 
 # %%
-max_encoder_length = 10  # Séquence qui est prise pour le modèle pour apprendre (résultats plus ou moins similaires de 2 à 30 jours)
+max_encoder_length = 366  # Séquence qui est prise pour le modèle pour apprendre; résultats légèrements meilleurs quand prend 1 an (366j), mais bcp plus long en calcul qu'une séquence de 2j
 max_prediction_length = 2  # Nombre de timesteps futures à prédire, j'aurais bien mis juste prédire le prochain jour (=1), mais le package n'accepte pas cette valeur
 # Pour le test set le modèle sera donc glissant, on va prédire chaque jour grâce aux `max_encoder_length` derniers jours le précédent
 
@@ -280,7 +280,7 @@ if FULL_TRAIN:
 # %%
 # Output des prédictions du train set
 # Dû à l'apprentissage par une séquence, pas de prédictions pour les `max_encoder_length` premières valeurs du train set
-PRED_TRAIN = True
+PRED_TRAIN = False
 if PRED_TRAIN and FULL_TRAIN:
     preds_train = pd.DataFrame(columns=[f"q{i}" for i in range(7)])
     adj = 2
@@ -313,12 +313,7 @@ if PRED_TRAIN and FULL_TRAIN:
     preds_train.index = pd.date_range(
         start="2013-03-02", periods=len(preds_train), freq="D"
     )
-# %%
-# preds_train.to_csv("Data/preds_tft_train.csv")
-# %%
-# Interpret model
-# interpretation = best_tft.interpret_output(raw_predictions.output, reduction="sum")
-# best_tft.plot_interpretation(interpretation)
+    preds_train.to_csv("Data/preds_tft_train_new.csv")
 # %%
 # Plot des prédiction
 preds.index = pd.date_range(start="2022-09-02", periods=len(preds), freq="D")
@@ -328,4 +323,4 @@ for i in preds.columns.to_list():
 plt.show()
 
 # %%
-# preds.to_csv("Data/preds_tft.csv")
+preds.to_csv("Data/preds_tft_new.csv")
