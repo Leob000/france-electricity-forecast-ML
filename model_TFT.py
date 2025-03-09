@@ -253,6 +253,7 @@ df_full.loc[df_full.index.max() + 1] = df_full.loc[df_full.index.max()]
 df_full.loc[df_full.index.max(), "time_idx"] += 1
 # %%
 # Output des prédictions du test set
+# Le modèle prédit 7 quantiles différents
 if FULL_TRAIN:
     preds = pd.DataFrame(columns=[f"q{i}" for i in range(7)])
     adj = 2
