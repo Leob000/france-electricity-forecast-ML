@@ -47,6 +47,7 @@ df_test <- df_full[idx_test, ]
 target_col <- "Net_demand"
 features_col <- setdiff(names(df_full), target_col)
 features_col <- setdiff(features_col, "Date")
+# On enlève la représentation date de format trigonométrique, car séparation de la représentation de la date en 2 variables, ce qui n'est pas forcément bon pour les modèles d'arbres qui splittent les variables une par une
 features_col <- setdiff(features_col, "x_dayofyear")
 features_col <- setdiff(features_col, "y_dayofyear")
 features_col <- setdiff(features_col, "x_dayofweek")
