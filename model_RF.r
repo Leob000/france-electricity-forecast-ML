@@ -16,7 +16,6 @@ df_full$BH_Holiday <- as.factor(df_full$BH_Holiday)
 # doy <- as.numeric(format(as.Date(df_full$Date), "%j"))
 # df_full$minmax_dayofyear <- (doy - min(doy)) / (max(doy) - min(doy))
 
-# df_full$weekend <- as.numeric((df_full$WeekDays == 5) | (df_full$WeekDays == 6))
 
 # Normalisation de Net_demand et laggées, en conservant la moyenne et l'écart type pour faire la transformation inverse sur les prédictions
 idx_train_val <- which(df_full$Date <= "2022-09-01")
@@ -27,6 +26,11 @@ Net_demand_sd <- sd(df_train_val$Net_demand)
 df_full$Net_demand <- (df_full$Net_demand - Net_demand_mean) / Net_demand_sd
 df_full$Net_demand.1 <- (df_full$Net_demand.1 - Net_demand_mean) / Net_demand_sd
 df_full$Net_demand.7 <- (df_full$Net_demand.7 - Net_demand_mean) / Net_demand_sd
+
+df_full$dayofyear <- as.numeric(format(as.Date(df_full$Date), "%j"))
+df_full$dayofyear <- (df_full$dayofyear - min(df_full$dayofyear)) / (max(df_full$dayofyear) - min(df_full$dayofyear))
+df_full$Month <- as.factor(format(as.Date(df_full$Date), "%m"))
+df_full$weekend <- as.numeric((df_full$WeekDays == 5) | (df_full$WeekDays == 6))
 
 # On fera une validation sur la dernière année du jeu train
 # Création des jeux de données train, val, test; et un jeu qui combine train et val
@@ -39,13 +43,14 @@ df_val <- df_full[idx_val, ]
 df_train_val <- df_full[idx_train_val, ]
 df_test <- df_full[idx_test, ]
 
-### Models
+
 target_col <- "Net_demand"
 features_col <- setdiff(names(df_full), target_col)
 features_col <- setdiff(features_col, "Date")
-features_col <- setdiff(features_col, "incr")
-# features_col <- setdiff(features_col, "WeekDays")
-# features_col <- setdiff(features_col, "lundi_vendredi")
+features_col <- setdiff(features_col, "x_dayofyear")
+features_col <- setdiff(features_col, "y_dayofyear")
+features_col <- setdiff(features_col, "x_dayofweek")
+features_col <- setdiff(features_col, "y_dayofweek")
 features_col
 
 library(randomForest)
@@ -85,5 +90,5 @@ plot(rf_model)
 importance <- importance(rf_model)
 varImpPlot(rf_model)
 
-write_csv(as.data.frame(predictions_test), "Data/preds_rf_test.csv")
-write_csv(as.data.frame(predictions_train), "Data/preds_rf_train.csv")
+# write_csv(as.data.frame(predictions_test), "Data/preds_rf_test.csv")
+# write_csv(as.data.frame(predictions_train), "Data/preds_rf_train.csv")
