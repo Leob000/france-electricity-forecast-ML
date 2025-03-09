@@ -55,7 +55,6 @@ features_col
 
 library(randomForest)
 # RandomForest basique
-CHEAT <- TRUE
 # Après essait de toutes les valeurs possibles de mtry (1:39), l'erreur OOB (0.02185) est minimisée pour mtry = 20 (pb 637)
 
 rf_model <- randomForest(as.formula(paste(target_col, "~ .")), data = df_train_val[, c(features_col, target_col)], importance = TRUE, ntree = 500, mtry = 20)
@@ -72,20 +71,8 @@ print(paste("Pinball on train set:", err_pinball_train))
 err_rmse_train <- sqrt(mean((truth_train - predictions_train)^2))
 print(paste("RMSE on train set:", err_rmse_train))
 
-if (CHEAT) {
-    truth_test <- read.csv("Data/test_better.csv")$Net_demand
-    err_pinball_test <- pinball_loss(truth_test, predictions_test, 0.8)
-    print(paste("Pinball on cheat set:", err_pinball_test))
-    err_rmse_test <- sqrt(mean((truth_test - predictions_test)^2))
-    print(paste("RMSE on cheat set:", err_rmse_test))
-
-    plot(df_test$Date, truth_test, type = "l", col = "blue", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions vs Ground Truth (Cheat 2022)")
-    lines(df_test$Date, predictions_test, col = "red", lwd = 2)
-    legend("topright", legend = c("Ground Truth", "Predictions"), col = c("blue", "red"), lwd = 2)
-} else {
-    plot(df_test$Date, predictions_test, type = "l", col = "red", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions (2022)")
-    legend("topright", legend = c("Predictions"), col = c("red"), lwd = 2)
-}
+plot(df_test$Date, predictions_test, type = "l", col = "red", lwd = 2, ylab = "Net Demand", xlab = "Date", main = "Predictions (2022)")
+legend("topright", legend = c("Predictions"), col = c("red"), lwd = 2)
 plot(rf_model)
 importance <- importance(rf_model)
 varImpPlot(rf_model)
