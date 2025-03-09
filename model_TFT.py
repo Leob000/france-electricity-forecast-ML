@@ -280,11 +280,18 @@ if FULL_TRAIN:
 # %%
 # Output des prédictions du train set
 # Dû à l'apprentissage par une séquence, pas de prédictions pour les `max_encoder_length` premières valeurs du train set
-PRED_TRAIN = False
+PRED_TRAIN = True
+if max_encoder_length == 10:
+    horizon = 3461
+elif max_encoder_length == 366:
+    horizon = 3105
+else:
+    horizon = 3461
+    print("Attention risque d'erreur sur l'horizon des prédictions!")
 if PRED_TRAIN and FULL_TRAIN:
     preds_train = pd.DataFrame(columns=[f"q{i}" for i in range(7)])
     adj = 2
-    for i in range(3461):  # 3461
+    for i in range(horizon):
         encoder_data = df_full[
             (df_full["time_idx"] >= i)
             & (df_full["time_idx"] <= max_encoder_length + i - 1)
@@ -310,10 +317,13 @@ if PRED_TRAIN and FULL_TRAIN:
             preds_train.loc[i, f"q{j}"] = float(
                 new_raw_predictions_train[0][0][0][0][j]
             )
-    preds_train.index = pd.date_range(
-        start="2013-03-02", periods=len(preds_train), freq="D"
-    )
-    preds_train.to_csv("Data/preds_tft_train_new.csv")
+# %%
+shifted_date = pd.to_datetime("2013-03-02") + pd.DateOffset(days=max_encoder_length)
+preds_train.index = pd.date_range(
+    start=shifted_date, periods=len(preds_train), freq="D"
+)
+# %%
+preds_train.to_csv("Data/preds_tft_train_new.csv")
 # %%
 # Plot des prédiction
 preds.index = pd.date_range(start="2022-09-02", periods=len(preds), freq="D")
