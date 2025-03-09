@@ -63,7 +63,6 @@ df_full.fillna(40000, inplace=True)
 # Passage en feature catégorielle de WeekDays et BH_Holiday
 df_full = pd.get_dummies(data=df_full, columns=["WeekDays", "BH_Holiday"], dtype=int)
 # %%
-# TODO test compatibilté FULL TRAIN
 # FULL train utilise tout le train set pour apprendre (les 2 jours du test set ne sont pas pris en compte par le modèle, la librairie requiert juste de mettre un minimum de validation set donc on prend ici l'horizon de prediction = 2 jours en plus)
 # C'est pourquoi on met "2022-09-04" pour le test set; le 2 et 3 septembre sont dans le train set mais ne seront pas utilisés pour l'apprentissage
 # Comme on peut le voir le package pytorch lightning est assez rigide et prend des inputs bien précis qui ne sont pas toujours bien documentés, ce qui rend son utilisation malheureusement peu pratique/intuitive
