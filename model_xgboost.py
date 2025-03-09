@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_pinball_loss
 import numpy as np
-from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import RandomizedSearchCV
 
