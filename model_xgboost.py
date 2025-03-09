@@ -135,7 +135,7 @@ preds_train["Date"] = pd.date_range(
 preds_test = model.predict(X_test) * f_std + f_mean
 preds_test = pd.DataFrame(preds_test, columns=["xgb"])
 preds_test["Date"] = pd.date_range(
-    start="2020-09-02", periods=len(preds_test), freq="D"
+    start="2022-09-02", periods=len(preds_test), freq="D"
 )
 
 # preds_train.to_csv("Data/preds_xgb_train.csv", index=False)
