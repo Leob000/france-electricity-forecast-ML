@@ -8,28 +8,33 @@ from sklearn.neural_network import MLPRegressor
 plt.rcParams["figure.figsize"] = [10, 6]
 
 CHEAT = True  # REM
+TFT_SEQUENCE_SIZE = 10
 
 
 # %%
 # Importation et formattage de toutes les preds, pour test et pour train
 df_rf_test = pd.read_csv("Data/preds_rf_test.csv")
 df_rf_train = pd.read_csv("Data/preds_rf_train.csv")
-df_tft_test = pd.read_csv("Data/preds_tft_new.csv")
+df_tft_test = pd.read_csv("Data/preds_tft.csv")
 df_tft_train = pd.read_csv("Data/preds_tft_train.csv")
 df_gam_test = pd.read_csv("Data/preds_gam_test.csv")
 df_gam_train = pd.read_csv("Data/preds_gam_train.csv")
+df_xgb_test = pd.read_csv("Data/preds_xgb_test.csv")
+df_xgb_train = pd.read_csv("Data/preds_xgb_train.csv")
 df_truth_train = pd.read_csv("Data/treated_data.csv")
 
-df_truth_test = pd.read_csv("Data/test_better.csv")  # REM
 # %%
-
+df_truth_test = pd.read_csv("Data/test_better.csv")  # REM
 df_rf_test.index = pd.date_range(start="2022-09-02", periods=len(df_rf_test), freq="D")
 df_rf_test.rename(columns={"predictions_test": "RF"}, inplace=True)
+# %%
 
 df_tft_test.index = pd.date_range(
     start="2022-09-02", periods=len(df_tft_test), freq="D"
 )
 df_tft_test = df_tft_test.iloc[:, 1:]
+df_tft_test
+# %%
 
 if CHEAT:
     df_truth_test = df_truth_test.set_index(
@@ -47,17 +52,20 @@ if CHEAT:
         left_index=True,
     )  # REM
 
-# ATTENTION pour le formattage des pred sur train, on doit supprimer les 10 premiers jours (car par prédis par le modèle TFT)
+# %%
+# ATTENTION pour le formattage des pred sur train, on doit supprimer les X premiers jours (car par prédis par le modèle TFT, suivant sa taille de séquence d'apprentissage)
+shifted_date = pd.to_datetime("2013-03-02") + pd.DateOffset(days=TFT_SEQUENCE_SIZE)
+
 df_tft_train.index = pd.date_range(
-    start="2013-03-12", periods=len(df_tft_train), freq="D"
+    start=shifted_date, periods=len(df_tft_train), freq="D"
 )
 df_tft_train = df_tft_train.iloc[:, 1:]
-
+# %%
 df_rf_train.rename(columns={"predictions_train": "RF"}, inplace=True)
 df_rf_train.index = pd.date_range(
     start="2013-03-02", periods=len(df_rf_train), freq="D"
 )
-df_rf_train = df_rf_train.iloc[10:]
+df_rf_train = df_rf_train.iloc[TFT_SEQUENCE_SIZE:]
 preds_train = pd.merge(
     left=df_rf_train, right=df_tft_train, left_index=True, right_index=True
 )
@@ -79,7 +87,7 @@ df_gam_train.index = pd.date_range(
 df_gam_train.rename(columns={"Net_demand": "gam"}, inplace=True)
 # %%
 
-df_gam_train = df_gam_train.iloc[10:]
+df_gam_train = df_gam_train.iloc[TFT_SEQUENCE_SIZE:]
 preds_train = pd.merge(
     left=preds_train, right=df_gam_train["gam"], right_index=True, left_index=True
 )
@@ -88,13 +96,24 @@ preds_train = pd.merge(
 df_truth_train.index = pd.date_range(
     start="2013-03-02", periods=len(df_truth_train), freq="D"
 )
-df_truth_train = df_truth_train.iloc[10:]
+df_truth_train = df_truth_train.iloc[TFT_SEQUENCE_SIZE:]
 preds_train = pd.merge(
     left=preds_train,
     right=df_truth_train["Net_demand"],
     right_index=True,
     left_index=True,
 )
+# %%
+df_xgb_train["Date"] = pd.to_datetime(df_xgb_train["Date"])
+df_xgb_train = df_xgb_train.set_index("Date")
+df_xgb_train = df_xgb_train.iloc[TFT_SEQUENCE_SIZE:]
+
+df_xgb_test["Date"] = pd.to_datetime(df_xgb_test["Date"])
+df_xgb_test = df_xgb_test.set_index("Date")
+df_xgb_test
+
+preds_train = pd.merge(preds_train, df_xgb_train, right_index=True, left_index=True)
+preds_test = pd.merge(preds_test, df_xgb_test, right_index=True, left_index=True)
 # %%
 preds_train.rename(columns={"Net_demand": "target"}, inplace=True)
 preds_test.rename(columns={"Net_demand": "target"}, inplace=True)
