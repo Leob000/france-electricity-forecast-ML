@@ -29,7 +29,7 @@ FULL_TRAIN = True  # Entrainement complet, False pour validation
 plt.rcParams["figure.figsize"] = (10, 6)
 
 # %%
-df_full = pd.read_csv("Data/treated_data_tft.csv")
+df_full = pd.read_csv("Data/treated_data.csv")
 df_full["time_idx"] = np.arange(len(df_full))
 df_full["Date"] = pd.to_datetime(df_full["Date"])
 df_full["fakegroup"] = "a"
