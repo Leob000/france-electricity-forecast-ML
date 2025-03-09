@@ -3,6 +3,9 @@ Cours/
 Data/
 my_stuff/
 lightning_logs/
+data_formatters/
+expt_settings/
+test_*.py
 
 # macOS
 .DS_Store
