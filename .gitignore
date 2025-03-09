@@ -5,10 +5,10 @@ lightning_logs/
 data_formatters/
 expt_settings/
 test_*.py
-Data/*.csv
-!Data/covid_data.csv
-!Data/test.csv
-!Data/train.csv
+Data/predictions.csv
+Data/predictions_.csv
+Data/submission_mod.csv
+Data/test_better.csv
 
 # macOS
 .DS_Store
